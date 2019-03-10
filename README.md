@@ -61,7 +61,7 @@ sin sin
 To uninstall SIN and all its base modules, run:
 
 ```
-sin uninstall sin
+sin remove sin
 ```
 
 ---

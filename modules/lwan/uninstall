@@ -1,6 +1,0 @@
-#!/bin/sh
-
-printf "Uninstall LWAN ..."
-rm -rfv /usr/local/include/lwan/ /usr/local/lib/liblwan* \
-/usr/local/lib/pkgconfig/lwan.pc /usr/local/bin/lwan /etc/lwan.conf
-printf "DONE\n"
