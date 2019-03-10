@@ -27,7 +27,7 @@ if [ "$(pgrep runsvdir)" ]; then
 		fi
 	done
 else
-	# for all init systems, call the original insserv
+	# for all other init systems, run the original insserv
 	[ -x /sbin/insserv.sysv ] && /sbin/insserv.sysv $@
 fi
 

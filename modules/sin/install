@@ -39,6 +39,6 @@ fi
 
 cp -uv sin /usr/bin/
 [ -d /usr/share/sin/ ] || mkdir -p /usr/share/sin
-[ -d "${0%/*}/modules/" ] && cp -ruvP "${0%/*}/modules/"* /usr/share/sin/
+cp -ruvP /usr/src/sin/modules/* /usr/share/sin/
 
 printf "\nDONE\n"
