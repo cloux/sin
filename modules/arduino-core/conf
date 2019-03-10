@@ -1,0 +1,10 @@
+#
+# default arduino-core installer configuration
+#
+
+# Arduino version to download
+# VERSION=1.8.8
+VERSION=nightly
+
+# the Arduino libraries will go into $LIBS_PATH/arduino-core/$VERSION
+LIBS_PATH=/usr/lib

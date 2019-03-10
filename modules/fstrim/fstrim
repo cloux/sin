@@ -1,0 +1,5 @@
+#!/bin/sh
+# trim all mounted filesystems that support TRIM operation
+
+FSTRIM=$(command -v fstrim)
+[ -x "$FSTRIM" ] && $FSTRIM --all || true

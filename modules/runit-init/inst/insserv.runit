@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# insserv compatibility layer for runit-init
+# (cloux@rote.ch)
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+if [ "$(pgrep runsvdir)" ]; then
+	# runit service activation/deactivation
+	while getopts 'snr' OPT 2>/dev/null; do
+		case $OPT in
+			s) exit 0 ;;
+			n) exit 0 ;;
+			r) DEACTIVATE=yes ;;
+		esac
+	done
+	shift "$(($OPTIND - 1))"
+	for SRV in $*; do
+		SRVNAME=$(printf "%s" "$SRV" | grep -o '^[^,]*')
+		[ "$SRVNAME" ] || continue
+		if [ "$DEACTIVATE" ]; then
+			svdeactivate $SRVNAME
+			# put back the original init-file, dpkg might want to remove it:
+			mv -f /etc/init.d/$SRVNAME.sysv /etc/init.d/$SRVNAME
+		else
+			svactivate $SRVNAME
+		fi
+	done
+else
+	# for all init systems, call the original insserv
+	[ -x /sbin/insserv.sysv ] && /sbin/insserv.sysv $@
+fi
+
+# try hard not to break DPKG progress even if service management failed
+exit 0

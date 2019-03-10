@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# Simple Installer
+#
+# Install and update software outside of the main repository.
+# Use modular directory structure with script names as commands.
+# The main idea is to execute multiple installer/update scripts
+# for different products in series.
+#
+# (cloux@rote.ch)
+#
+
+# maximum allowed runtime of a single command
+TIMEOUT="90m"
+TIMEOUT_KILL="10s"
+
+list_modules () {
+	printf "Available modules: "
+	find ~/.local/share/sin/ /usr/local/share/sin/ /usr/share/sin/ ${0%/*}/modules/ \
+	  -mindepth 1 -maxdepth 1 -type d -printf "%f\n" 2>/dev/null | sort -u | tr '\n' ' '
+	printf "\n\n"
+}
+
+if [ $# -eq 0 ]; then
+	printf "Simple Installer\n\n"
+	printf "Usage: sin [COMMAND] MODULE [MODULE] ...\n\n"
+	printf "Executes COMMAND script in all MODULEs.\n"
+	printf "The default COMMAND is \"install\".\n\n"
+	printf "Search for COMMAND in these directories:\n"
+	printf " ~/.local/share/sin/MODULE/\n"
+	printf " /usr/local/share/sin/MODULE/\n"
+	printf " /usr/share/sin/MODULE/\n"
+	printf " and within the sin path in 'modules' subdirectory.\n\n"
+	list_modules
+	exit
+elif [ $# -eq 1 ]; then
+	COMMAND=install
+	MODULES=$1
+else
+	COMMAND=$1
+	MODULES=${@#* }
+fi
+printf "Command: %s\nModules: %s\n" "$COMMAND" "$MODULES"
+
+LOGDIR=/var/log/sin
+[ -d "$LOGDIR" ] || mkdir -p "$LOGDIR" 2>/dev/null
+
+for MODULE in $MODULES; do
+	printf "====================================================\n"
+
+	# determine what script to run
+	MODDIR="~/.local/share/sin/$MODULE"
+	[ -d "$MODDIR" ] || MODDIR="/usr/local/share/sin/$MODULE"
+	[ -d "$MODDIR" ] || MODDIR="/usr/share/sin/$MODULE"
+	[ -d "$MODDIR" ] || MODDIR="${0%/*}/modules/$MODULE"
+	if [ ! -d "$MODDIR" ]; then
+		printf "Module '%s' not found.\n\n" "$MODULE"
+		list_modules
+		continue
+	fi
+	if [ ! -x "$MODDIR/$COMMAND" ]; then
+		printf "Command '%s' not found in '%s/'\n\n" "$COMMAND" "$MODDIR"
+		printf "Available commands for '%s': " "$MODULE"
+		find "$MODDIR" -maxdepth 1 -type f -perm /111 -printf "%f\n" | sort | tr '\n' ' '
+		printf "\n\n"
+		continue
+	fi
+	printf "Running: %s\n" "$MODDIR/$COMMAND"
+
+	# set up the logfile
+	LOGFILE="$LOGDIR/$MODULE.log"
+	touch "$LOGFILE" 2>/dev/null || LOGFILE="/tmp/sin-$MODULE.log"
+	printf "Logfile: %s\n\n" "$LOGFILE"
+
+	# run the command, kill it after a timeout if possible
+	if [ "$(command -v timeout)" ]; then
+		timeout --foreground -k "$TIMEOUT_KILL" "$TIMEOUT" \
+		"$MODDIR/$COMMAND" 2>&1 | tee "$LOGFILE" 2>/dev/null
+	else
+		"$MODDIR/$COMMAND" 2>&1 | tee "$LOGFILE" 2>/dev/null
+	fi
+done
+

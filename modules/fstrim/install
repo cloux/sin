@@ -1,0 +1,9 @@
+#!/bin/sh
+# install fstrim cronjob for SSD drives
+
+if ls -1 /etc/cron.weekly 2>/dev/null | grep -q trim; then
+	printf "Trim cronjob is already present, nothing to do.\n"
+	exit
+fi
+
+cp -u ${0%/*}/fstrim /etc/cron.weekly/fstrim

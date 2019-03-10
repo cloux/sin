@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# Simple Installer - self installation/update script
+#
+# (cloux@rote.ch)
+#
+
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+#
+# determine the package manager
+#
+APTINST="$(command -v aptitude)"
+[ "$APTINST" ] || APTINST="$(command -v apt-get)" 
+export DEBIAN_FRONTEND=noninteractive
+
+cd /usr/src || exit 1
+if [ -d sin ]; then
+	printf "Update SIN ...\n\n"
+	cd sin
+	git fetch --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Up to date, nothing to do.\n"
+		exit
+	else
+		git pull || exit 1
+	fi
+else
+	printf "Install SIN ...\n\n"
+	# install dependencies (DEB systems)
+	if [ "$APTINST" ]; then
+		$APTINST --assume-yes -o Dpkg::Use-Pty=0 update
+		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install git || exit 1
+	fi
+	# clone repo
+	git clone https://github.com/cloux/sin || exit 1
+	cd sin
+fi
+
+cp -uv sin /usr/bin/
+[ -d /usr/share/sin/ ] || mkdir -p /usr/share/sin
+[ -d "${0%/*}/modules/" ] && cp -ruvP "${0%/*}/modules/"* /usr/share/sin/
+
+printf "\nDONE\n"

@@ -1,0 +1,208 @@
+#!/bin/sh
+#
+# Install runit as the default init system
+#
+# (cloux@rote.ch)
+#
+
+#RUNIT_GIT=https://salsa.debian.org/runit-team/runit.git
+RUNIT_GIT=https://github.com/cloux/runit
+RUNIT_BASE_GIT=https://github.com/cloux/runit-base
+
+# check root access
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+printf "Installing runit-init ...\n\n"
+MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
+
+#
+# check OS distribution
+#
+DISTRO=$(lsb_release -i 2>/dev/null | sed 's/.*\s//')
+printf "System info: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
+
+#
+# determine the package manager
+#
+APTINST="$(command -v aptitude)"
+[ "$APTINST" ] || APTINST="$(command -v apt-get)" 
+export DEBIAN_FRONTEND=noninteractive
+
+#
+# remove conflicting packages
+#
+[ "$APTINST" ] && $APTINST -f --assume-yes -o Dpkg::Use-Pty=0 \
+  remove runit-init getty-run
+#
+# install recommended packages
+#
+[ "$APTINST" ] && $APTINST -f --assume-yes -o Dpkg::Use-Pty=0 \
+  install bootlogd irqbalance
+
+#
+# runit-init
+# git clone/pull and compile the source
+#
+cd /usr/src
+if [ -d "${RUNIT_GIT##*/}" ]; then
+	cd ${RUNIT_GIT##*/}
+	git fetch -q --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Runit source is up to date, nothing to do.\n"
+	else
+		git pull -q || exit 1
+	fi
+else
+	# install dependencies
+	[ "$APTINST" ] && $APTINST --assume-yes -o Dpkg::Use-Pty=0 \
+	  install git gcc make
+	# clone repo
+	git clone -q $RUNIT_GIT || exit 1
+	cd ${RUNIT_GIT##*/}
+fi
+cd runit*
+# compile & check
+package/compile || exit 1
+#package/check || exit 1
+# install manpages
+package/install-man
+# install runit-init, use the same target paths as the DEB package
+cd command || exit 1
+printf "\nInstalling runit-init commands ...\n"
+cp -puvf -t /sbin/ runit runit-init
+cp -puvf -t /usr/sbin/ runsvchdir utmpset
+cp -puvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
+cd ..
+# clean up
+rm -rf command/ compile/
+
+# install bash completion
+cd ..
+if [ -d /usr/share/bash-completion/completions ]; then
+	cd debian/contrib
+	for cfile in *.bash-completion; do
+		cp -pufv $cfile /usr/share/bash-completion/completions/${cfile%%.*}
+	done
+	cd ../..
+fi
+# install funny runlevel compatibility script
+# NOTE: this should be activated only after runit-init becomes system init,
+#       do not overwrite system scripts yet!
+[ -x debian/contrib/runlevel ] && \
+  cp -pufv debian/contrib/runlevel /sbin/runlevel.runit
+
+#
+# runit-base 
+# git clone/pull and compile the source
+#
+printf "\nInstalling runscripts from %s ...\n" "$RUNIT_BASE_GIT"
+cd /usr/src
+if [ -d ${RUNIT_BASE_GIT##*/} ]; then
+	cd ${RUNIT_BASE_GIT##*/}
+	git fetch -q --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Up to date, nothing to do.\n"
+	else
+		git pull -q || exit 1
+	fi
+else
+	# clone repo
+	git clone -q $RUNIT_BASE_GIT || exit 1
+	cd ${RUNIT_BASE_GIT##*/}
+fi
+# update
+cp -puvPR -t / etc
+
+#
+# copy support scripts and config files
+#
+printf "\nInstalling runit system compatibility scripts ...\n"
+# copy non-conflicting scripts
+for xfile in $(find "${MODULE_PATH}/inst" -maxdepth 1 -type f -perm /111 \
+ ! -name install -printf "%f "); do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/${xfile##*/}
+done
+# copy config files
+[ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
+  /etc/apt/preferences.d/runit-init 2>/dev/null
+printf "\n"
+
+#
+# install socklog using a separate installer
+# NOTE: this expects the Simple Installer directory structure
+#
+${MODULE_PATH}/../socklog/install 2>&1
+
+#
+# activate currently running services under runit
+#
+printf "\nDetect running services ...\n\n"
+for PROCNAME in acpid dovecot cron hiawatha nginx oomd opendkim php-fpm \
+postfix proftpd redis-server redis-sentinel rpcbind smbd uuidd wicd; do
+	SRV="$(pgrep -ax $PROCNAME)"
+	if [ "$SRV" ]; then
+		printf "Found $PROCNAME: %s\n" "$SRV"
+		ln -sfv /etc/sv/$PROCNAME /etc/service/
+	fi
+done
+SRV="$(pgrep -ax cupsd)"
+if [ "$SRV" ]; then
+	printf "Found cups: %s\n" "$SRV"
+	ln -sfv /etc/sv/cups /etc/service/
+fi
+SRV="$(pgrep -ax bluetoothd)"
+if [ "$SRV" ]; then
+	printf "Found bluetooth: %s\n" "$SRV"
+	ln -sfv /etc/sv/bluetooth /etc/service/
+fi
+SRV="$(pgrep -ax incrond)"
+if [ "$SRV" ]; then
+	printf "Found incron: %s\n" "$SRV"
+	ln -sfv /etc/sv/incron /etc/service/
+fi
+SRV="$(pgrep -ax mongod)"
+if [ "$SRV" ]; then
+	printf "Found mongodb: %s\n" "$SRV"
+	ln -sfv /etc/sv/mongo /etc/service/
+fi
+SRV="$(pgrep -ax mysqld)"
+if [ "$SRV" ]; then
+	printf "Found mysql: %s\n" "$SRV"
+	ln -sfv /etc/sv/mysql /etc/service/
+fi
+SRV="$(pgrep -ax pg_ctlcluster)"
+if [ "$SRV" ]; then
+	printf "Found postgresql: %s\n" "$SRV"
+	ln -sfv /etc/sv/postgresql /etc/service/
+fi
+SRV="$(pgrep -a pure-ftpd)"
+if [ "$SRV" ]; then
+	printf "Found pureftpd: %s\n" "$SRV"
+	ln -sfv /etc/sv/pureftpd /etc/service/
+fi
+SRV="$(pgrep -ax sshd)"
+if [ "$SRV" ]; then
+	printf "Found ssh: %s\n" "$SRV"
+	ln -sfv /etc/sv/ssh /etc/service/
+fi
+# GUI services
+DEFAULT_DISPLAY_MANAGER="$(head -n 1 /etc/X11/default-display-manager 2>/dev/null)"
+if [ -x "$DEFAULT_DISPLAY_MANAGER" ]; then
+	printf "Display manager: %s - activating GUI services\n" "$DEFAULT_DISPLAY_MANAGER"
+	ln -sfv /etc/sv/X11dm /etc/service/
+	ln -sfv /etc/sv/elogind /etc/service/
+	ln -sfv /etc/sv/dbus /etc/service/
+	ln -sfv /etc/sv/udevd /etc/service/
+else
+	printf "Display manager not found in /etc/X11/default-display-manager,\n"
+	printf "deactivating X11dm, elogind, dbus, udevd.\n"
+	rm -f /etc/service/X11dm /etc/service/elogind /etc/service/dbus \
+	      /etc/service/udevd
+fi
+
+printf "\nInstallation complete!\n\n"
+printf " To switch to runit-init system, tell the kernel to use runit:\n"
+printf "  - edit /etc/default/grub and add\n"
+printf "    GRUB_CMDLINE_LINUX_DEFAULT=\"init=/sbin/runit-init\"\n"
+printf "  - run 'update-grub' and reboot.\n"
+printf " WARNING: BROKEN INIT SYSTEM MIGHT KILL JOHN WICK'S DOG!\n\n"

@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Install latest Slack for Linux (DEB) from slack.com website
+# (cloux@rote.ch)
+#
+SLACK_DOWNLOAD_PAGE="https://slack.com/downloads/instructions/linux"
+
+# need to be root
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ -z "$(command -v dpkg)" ]; then
+	printf "ERROR: dpkg is missing, Skype DEB package can not be installed.\n"
+	exit 1
+fi
+ARCHIVE_DIR=/var/cache/sin
+[ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
+cd $ARCHIVE_DIR || exit 1
+
+printf "Searching for Slack DEB installer ... "
+SLACK_INSTALLER=$(curl "$SLACK_DOWNLOAD_PAGE" 2>/dev/null | grep -o 'http[^"]*amd64\.deb')
+if [ -z "$SLACK_INSTALLER" ]; then
+	printf "FAILED\n"
+	exit 1
+fi
+printf "OK\n"
+
+DEB_FILE=$(printf "%s" "$SLACK_INSTALLER" | grep -o '[^/]*$')
+
+[ -f "$DEB_FILE" ] && MTIME_BEFORE=$(stat --format=%Y "$DEB_FILE")
+wget -4 -N -nd --progress=dot:giga "$SLACK_INSTALLER" || exit 1
+MTIME_NOW=$(stat --format=%Y "$DEB_FILE")
+if [ "$MTIME_BEFORE" = "$MTIME_NOW" ]; then
+	printf "Latest Slack release (%s) already downloaded, nothing to do.\n\n" \
+	"$(stat --format=%y "$DEB_FILE" | grep -o '^[^ ]*')"
+	exit
+fi
+
+printf "Installing Slack ... "
+export DEBIAN_FRONTEND=noninteractive
+dpkg --force-confdef -i "$DEB_FILE"
+if [ $? -ne 0 ]; then
+	if [ "$(command -v aptitude)" ]; then
+		APTINST=aptitude
+	elif [ "$(command -v apt-get)" ]; then
+		APTINST=apt-get
+	fi
+	if [ "$APTINST" ]; then
+		$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install
+	else
+		printf "ERROR: DEB installer not found, dependency installation failed.\n"
+		exit 1
+	fi
+fi
+
+printf "Delete old packages ...\n"
+find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname 'slack*' ! -iname "$DEB_FILE" -delete
+
+printf "\nDONE\n\n"
+
+

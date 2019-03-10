@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# LWAN - Lightweight Asynchronous Multi-threaded Event-based Webserver
+# https://lwan.ws
+#
+# (cloux@rote.ch)
+
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+# pull the code
+cd /usr/src
+if [ -d lwan ]; then
+	cd lwan
+	git fetch --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Up to date, nothing to do.\n"
+		exit
+	fi
+	git pull || exit 1
+	mkdir build 2>/dev/null
+	cd build || exit 1
+else
+	# install dependencies (DEB)
+	apt-get --assume-yes -o Dpkg::Use-Pty=0 install git cmake zlib1g-dev \
+	  pkg-config lua5.1-dev || exit 1
+	# clone repo
+	git clone https://github.com/lpereira/lwan || exit 1
+	mkdir lwan/build 2>/dev/null
+	cd lwan/build || exit 1
+fi
+
+cmake .. -DCMAKE_BUILD_TYPE=Release || exit 1
+make || exit 1
+make install || exit 1
+make clean
+cp -n ../lwan.conf /etc/lwan.conf
+
+printf "\nDONE\n"

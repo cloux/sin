@@ -1,0 +1,32 @@
+#!/bin/sh
+# Out-Of-Memory killer installer
+# (cloux@rote.ch)
+
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+# pull the code
+cd /usr/src
+if [ -d oomd ]; then
+	cd oomd
+	git fetch --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Up to date, nothing to do.\n"
+		exit
+	fi
+	git pull || exit 1
+else
+	# install dependencies
+	apt-get --assume-yes -o Dpkg::Use-Pty=0 install git meson ninja-build libjsoncpp-dev || exit 1
+	# clone repo
+	git clone https://github.com/facebookincubator/oomd || exit 1
+	cd oomd
+fi
+
+# build
+meson build || exit 1
+ninja -C build || exit 1
+cd build
+
+# install
+ninja install || exit 1
+printf "\nDONE\n"

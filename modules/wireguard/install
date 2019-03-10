@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Install WireGuard - Secure VPN Tunnel
+# https://www.wireguard.com
+#
+# (cloux@rote.ch)
+
+# need to be root
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+# get the source
+cd /usr/src
+if [ -d WireGuard ]; then
+	cd WireGuard
+	git fetch --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Up to date, nothing to do.\n"
+		exit
+	fi
+	git pull || exit 1
+	cd src
+else
+	# install dependencies
+	export DEBIAN_FRONTEND=noninteractive
+	apt-get --assume-yes -o Dpkg::Use-Pty=0 install git libmnl-dev libelf-dev \
+	  build-essential pkg-config || exit 1
+	# clone repo
+	git clone https://git.zx2c4.com/WireGuard || exit 1
+	cd WireGuard/src
+fi
+
+# compile & install
+make || exit 1
+make install || exit 1
+
+printf "\nDONE\n"

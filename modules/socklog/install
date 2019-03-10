@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# Socklog - system and kernel logging services for daemontools
+# http://smarden.org/socklog/
+#
+# (cloux@rote.ch)
+
+SOCKLOG_GIT="https://github.com/cloux/socklog"
+
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+#
+# determine the package manager
+#
+APTINST="$(command -v aptitude)"
+[ "$APTINST" ] || APTINST="$(command -v apt-get)" 
+export DEBIAN_FRONTEND=noninteractive
+
+#
+# git clone/pull and compile source
+#
+cd /usr/src
+if [ -d "${SOCKLOG_GIT##*/}" ]; then
+	cd ${SOCKLOG_GIT##*/}
+	git fetch -q --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf "Socklog source is up to date, nothing to do.\n"
+	else
+		git pull -q || exit 1
+	fi
+else
+	# install dependencies
+	[ "$APTINST" ] && $APTINST --assume-yes -o Dpkg::Use-Pty=0 install git gcc make
+	# clone repo
+	git clone -q $SOCKLOG_GIT || exit 1
+	cd ${SOCKLOG_GIT##*/}
+fi
+package/compile || exit 1
+#package/check || exit 1
+# install manpages
+package/install-man
+
+# install compiled commands
+cd command || exit 1
+cp -puvf -t /usr/bin/ *
+cd ..
+
+# clean up
+#rm -rf command/ compile/
+
+printf "\nDONE\n"

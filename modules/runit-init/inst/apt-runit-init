@@ -1,0 +1,11 @@
+Package: getty-run
+Pin: release *
+Pin-Priority: -1
+
+Package: dbus *elogind* libpolkit-* policykit-1 procps
+Pin: release a=stable
+Pin-Priority: 1001
+
+Package: libfontconfig*
+Pin: release a=testing
+Pin-Priority: 550

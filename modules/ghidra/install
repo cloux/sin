@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# Install Ghidra - Software reverse engineering (SRE) suite developed by NSA
+# https://ghidra-sre.org
+# https://github.com/NationalSecurityAgency/ghidra
+#
+# (cloux@rote.ch)
+#
+
+DOWNLOAD_PAGE="https://ghidra-sre.org"
+
+# need to be root
+if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+
+# use archive directory
+ARCHIVE_DIR=/var/cache/sin
+[ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
+cd $ARCHIVE_DIR || exit 1
+
+# find latest version
+printf "Searching for Ghidra installer ... "
+DOWNLOAD_LINK=$(wget -q "$DOWNLOAD_PAGE" -O - 2>/dev/null | grep -o '[^"]*ghidra_[^"]*\.zip')
+if [ -z "$DOWNLOAD_LINK" ]; then
+	printf "FAILED\n"
+	exit 1
+fi
+DOWNLOAD_LINK="$DOWNLOAD_PAGE/$DOWNLOAD_LINK"
+INST_FILE=$(printf "%s" "$DOWNLOAD_LINK" | grep -o '[^/]*$')
+INST_VERS=$(printf "%s" "$INST_FILE" | grep -o '[0-9].*[0-9]')
+if [ -z "$INST_VERS" ]; then
+	printf "ERROR - unknown installer version: %s\n" "$INST_FILE"
+	exit 1
+fi
+printf "found %s\n\n" "$INST_VERS"
+if [ -f "$INST_FILE" ]; then
+	printf "Latest version is already installed, nothing to do.\n"
+	exit
+fi
+
+# download
+wget -4 -N -nd --progress=dot:giga "$DOWNLOAD_LINK" || exit 1
+if [ ! -f "$INST_FILE" ]; then
+	printf "Download failed.\n"
+	exit 1
+fi
+
+# install
+printf "Installing Ghidra ...\n"
+unzip "$INST_FILE" || exit 1
+INST_DIR=$(find -type d -iname 'ghidra*' -printf '%f' -quit)
+if [ ! -d "$INST_DIR" ]; then
+	printf "ERROR: path %s not found.\n" "$INST_DIR"
+	exit 1
+fi
+rm -rf /opt/ghidra*
+mv -f -t /opt/ "$INST_DIR"
+[ -x /opt/"$INST_DIR"/ghidraRun ] && ln -sf /opt/"$INST_DIR"/ghidraRun /usr/bin/ghidra
+
+# cleanup
+printf "Delete old versions ...\n"
+find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname 'ghidra*' ! -iname "$INST_FILE" -delete
+
+printf "\nDONE\n\n"

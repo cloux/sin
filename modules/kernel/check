@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Check the latest kernel version on kernel.org
+#
+# (cloux@rote.ch)
+
+if [ ! -x "${0%/*}/install" ]; then
+	printf "Error: %s not found." "${0%/*}/install"
+	exit 1
+fi
+
+${0%/*}/install -c
