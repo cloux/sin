@@ -7,7 +7,7 @@
 if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
 
 # Install all scripts from 'inst' into /usr/local/bin/
-find ${0%/*}/inst -maxdepth 1 -type f -perm /111 -exec cp -u '{}' /usr/local/bin/'{}' \;
+find ${0%/*}/inst -maxdepth 1 -type f -perm /111 -exec cp -uvpP -t /usr/local/bin/ '{}' \;
 
 # Install ec2-metadata from Amazon
 if [ -x /usr/local/bin/ec2-metadata ]; then
