@@ -21,6 +21,7 @@ for SRV in "$@"; do
 		fi
 		continue
 	fi
+	sv stop $SRVNAME 2>&1
 	rm "/etc/service/$SRVNAME" 2>/dev/null
 	if [ $? -ne 0 ]; then
 		printf "ERROR: Runit service '%s' deactivation failed\n" "$SRVNAME"

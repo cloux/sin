@@ -39,6 +39,8 @@ printf "Stop services:\n"
 sv stop $(find /etc/service/ -type l ! -iname 'ssh' ! -iname '*getty*' ! -iname 'acpid')
 
 printf "Delete logfiles ..."
+DOWNTIMEDB=$(downtime -v 2>/dev/null | grep downtimedbfile | grep -o '/.*')
+[ -f "$DOWNTIMEDB" ] && rm -f "$DOWNTIMEDB"
 rm -f /var/log/boot.log* /var/log/cloud-init*.log* /var/log/dmesg.log* \
  /var/log/apt/history.log* /var/log/apt/term.log* /var/log/hiawatha/* \
  /var/log/pure*.log /var/log/autorun*.log* /var/log/dpkg.log* /var/log/lastlog \

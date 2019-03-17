@@ -27,7 +27,9 @@ for SRV in "$@"; do
 	if [ $? -ne 0 ]; then
 		printf "ERROR: Runit service '%s' activation failed\n" "$SRVNAME"
 		RET=1
+		continue
 	fi
+	sv up $SRVNAME
 done
 
 exit $RET
