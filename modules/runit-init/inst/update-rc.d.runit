@@ -101,8 +101,12 @@ sub make_sysv_links {
 
     # for "remove" we cannot rely on the init script still being present, as
     # this gets called in postrm for purging. Just remove all symlinks.
-    if ("remove" eq $action) { unlink($_) for
-        glob("/etc/rc?.d/[SK][0-9][0-9]$scriptname"); return; }
+    if ("remove" eq $action) { 
+        unlink($_) for glob("/etc/rc?.d/[SK][0-9][0-9]$scriptname");
+        # disable runit supervision
+        unlink "/etc/service/$scriptname"; 
+        return;
+    }
 
     # if the service already has any links, do not touch them
     # numbers we don't care about, but enabled/disabled state we do

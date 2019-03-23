@@ -138,7 +138,9 @@ printf "\nInstalling runit system compatibility scripts ...\n"
 for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
 	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
 done
-cp -pufv "${MODULE_PATH}/inst/update-rc.d.runit" /usr/sbin/update-rc.d.runit
+for xfile in start-statd.runit update-rc.d.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
+done
 # copy config files
 [ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
   /etc/apt/preferences.d/runit-init 2>/dev/null

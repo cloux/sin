@@ -20,8 +20,10 @@ if [ "$(pgrep runsvdir)" ]; then
 		[ "$SRVNAME" ] || continue
 		if [ "$DEACTIVATE" ]; then
 			svdeactivate $SRVNAME
-			# put back the original init-file, dpkg might want to remove it:
+			# put back the original init-file, dpkg might want to remove it
 			mv -f /etc/init.d/$SRVNAME.sysv /etc/init.d/$SRVNAME 2>/dev?null
+			# delete rc.d symlinks
+			find /etc/ -type l -path '/etc/rc?.d/[KS]*'$SRVNAME -delete
 		else
 			svactivate $SRVNAME
 		fi
