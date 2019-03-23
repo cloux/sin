@@ -1,0 +1,14 @@
+
+# Jenkins release type
+
+# Jenkins Open Source Edition
+RELEASE=war
+
+# Jenkins Open Source Edition - stable
+#RELEASE=war-stable
+
+# CloudBees Jenkins Enterprise
+#RELEASE=cje
+
+# CloudBees Jenkins Enterprise Operations Center
+#RELEASE=cjoc
