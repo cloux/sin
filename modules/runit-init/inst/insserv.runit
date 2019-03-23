@@ -29,6 +29,7 @@ if [ "$(pgrep runsvdir)" ]; then
 else
 	# for all other init systems, run the original insserv
 	[ -x /sbin/insserv.sysv ] && /sbin/insserv.sysv $@
+	[ -x /usr/lib/insserv/insserv ] && /usr/lib/insserv/insserv $@
 fi
 
 # try hard not to break DPKG progress even if service management failed

@@ -4,9 +4,11 @@
 #
 # (cloux@rote.ch)
 
-if [ ! -x "${0%/*}/install" ]; then
-	printf "Error: %s not found." "${0%/*}/install"
+MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
+
+if [ ! -x "${MODULE_PATH}/install" ]; then
+	printf "Error: %s not found." "${MODULE_PATH}/install"
 	exit 1
 fi
 
-${0%/*}/install -c
+"${MODULE_PATH}/install" -c

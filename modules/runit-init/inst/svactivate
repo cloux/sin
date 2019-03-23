@@ -29,7 +29,6 @@ for SRV in "$@"; do
 		RET=1
 		continue
 	fi
-	sv up $SRVNAME
 done
 
 exit $RET

@@ -16,7 +16,8 @@ if [ -d oomd ]; then
 	git pull || exit 1
 else
 	# install dependencies
-	apt-get --assume-yes -o Dpkg::Use-Pty=0 install git meson ninja-build libjsoncpp-dev || exit 1
+	apt-get --assume-yes -o Dpkg::Use-Pty=0 install \
+	  cmake g++ git meson ninja-build libjsoncpp-dev pkg-config || exit 1
 	# clone repo
 	git clone https://github.com/facebookincubator/oomd || exit 1
 	cd oomd

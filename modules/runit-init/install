@@ -30,26 +30,26 @@ DISTRO=$(lsb_release -i 2>/dev/null | sed 's/.*\s//')
 printf "System info: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
 
 #
-# determine the package manager
+# manage package dependencies
 #
 APTINST="$(command -v aptitude)"
 [ "$APTINST" ] || APTINST="$(command -v apt-get)" 
-export DEBIAN_FRONTEND=noninteractive
-
-#
-# remove conflicting packages
-#
-[ "$APTINST" ] && $APTINST -f --assume-yes -o Dpkg::Use-Pty=0 \
-  remove runit-init getty-run
-#
-# install recommended packages
-#
-[ "$APTINST" ] && $APTINST -f --assume-yes -o Dpkg::Use-Pty=0 \
-  install libc6-dev bootlogd irqbalance
+if [ "$APTINST" ] && dpkg -l udev 2>/dev/null | grep -q ^ii; then
+	export DEBIAN_FRONTEND=noninteractive
+	printf "Update list of available packages ...\n"
+	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update
+	printf "Install dependencies ...\n"
+	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install \
+	  libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
+	printf "Remove conflicting packages ...\n"
+	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 remove \
+	  runit runit-init getty-run
+fi
 
 #
 # runit-init (git clone/pull and compile)
 #
+printf "\nInstalling runit-init from %s ...\n" "$RUNIT_GIT"
 cd /usr/src
 if [ -d "${RUNIT_GIT##*/}" ]; then
 	cd ${RUNIT_GIT##*/}
@@ -117,9 +117,9 @@ else
 fi
 if [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
 	# generate clean distribution and overwrite everything
-	printf "OVERWRITE runit-base\n"
+	printf "OVERWRITE runit-base ...\n"
 	rm -rf /etc/sv/
-	cp -pfvPR -t / etc
+	cp -pfPR -t / etc
 else
 	# copy only new files, notify about differences
 	# do not overwrite local user changes and customizations
@@ -134,10 +134,10 @@ fi
 #
 printf "\nInstalling runit system compatibility scripts ...\n"
 # copy non-conflicting scripts
-for xfile in $(find "${MODULE_PATH}/inst" -maxdepth 1 -type f -perm /111 \
- ! -name install -printf "%f "); do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/${xfile##*/}
+for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
 done
+cp -pufv "${MODULE_PATH}/inst/update-rc.d.runit" /usr/sbin/update-rc.d.runit
 # copy config files
 [ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
   /etc/apt/preferences.d/runit-init 2>/dev/null
@@ -167,23 +167,28 @@ fi
 # activate runit supervision for currently running services
 #
 printf "\nDetect and activate current services ...\n\n"
-for PROCNAME in acpid dovecot cron hiawatha nginx oomd opendkim php-fpm \
-postfix proftpd redis-server redis-sentinel rpcbind smbd uuidd wicd; do
+for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim php-fpm \
+postfix proftpd redis-server redis-sentinel rpcbind smbd udevd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf "Found $PROCNAME: %s\n" "$SRV"
 		ln -sf /etc/sv/$PROCNAME /etc/service/
 	fi
 done
+SRV="$(pgrep -ax bluetoothd)"
+if [ "$SRV" ]; then
+	printf "Found bluetooth: %s\n" "$SRV"
+	ln -sf /etc/sv/bluetooth /etc/service/
+fi
 SRV="$(pgrep -ax cupsd)"
 if [ "$SRV" ]; then
 	printf "Found cups: %s\n" "$SRV"
 	ln -sf /etc/sv/cups /etc/service/
 fi
-SRV="$(pgrep -ax bluetoothd)"
+SRV="$(pgrep -ax dbus-daemon)"
 if [ "$SRV" ]; then
-	printf "Found bluetooth: %s\n" "$SRV"
-	ln -sf /etc/sv/bluetooth /etc/service/
+	printf "Found dbus: %s\n" "$SRV"
+	ln -sf /etc/sv/dbus /etc/service/
 fi
 SRV="$(pgrep -ax incrond)"
 if [ "$SRV" ]; then
@@ -218,16 +223,11 @@ fi
 # GUI services
 DEFAULT_DISPLAY_MANAGER="$(head -n 1 /etc/X11/default-display-manager 2>/dev/null)"
 if [ -x "$DEFAULT_DISPLAY_MANAGER" ]; then
-	printf "Display manager: %s - activating GUI services\n" "$DEFAULT_DISPLAY_MANAGER"
+	printf "Found display manager: %s - activating X11dm\n" "${DEFAULT_DISPLAY_MANAGER##*/}"
 	ln -sfv /etc/sv/X11dm /etc/service/
-	ln -sfv /etc/sv/elogind /etc/service/
-	ln -sfv /etc/sv/dbus /etc/service/
-	ln -sfv /etc/sv/udevd /etc/service/
 else
-	printf "Display manager not found in /etc/X11/default-display-manager,\n"
-	printf "deactivating X11dm, elogind, dbus, udevd.\n"
-	rm -f /etc/service/X11dm /etc/service/elogind /etc/service/dbus \
-	      /etc/service/udevd
+	printf "Display manager not found, deactivating X11dm\n"
+	rm -f /etc/service/X11dm
 fi
 
 printf "\nINSTALLATION COMPLETE!\n\n"

@@ -1,11 +1,77 @@
 #!/bin/sh
-# Install Jenkins
+# Install Jenkins - Generic Java Package
+# see: https://jenkins.io/download/
+#
 # (cloux@rote.ch)
 
 if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
 
-cd /opt || exit 1
-printf "Downloading Jenkins into /opt ... \n"
-wget -N -4 --progress=dot:giga http://mirrors.jenkins.io/war/latest/jenkins.war || exit 1
+# select Jenkins release type
+RELEASE=war
+#RELEASE=war-stable
+#RELEASE=cjoc
+#RELEASE=cje
 
-printf "Start Jenkins by running:\n\n  java -jar /opt/jenkins.war --httpPort=9090\n\nDONE\n"
+# use configuration file to override the defaults above
+MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
+[ -r "$MODULE_PATH/conf" ] && . "$MODULE_PATH/conf"
+
+if [ "$RELEASE" = "cje" ]; then
+	printf "Installing CloudBees Jenkins Enterprise - Client Master\n"
+	printf "Latest upstream version: "
+	VERSION=$(wget -q -O - https://downloads.cloudbees.com/$RELEASE/rolling/war | \
+	grep -o 'href="[^"]*"' | grep -o '[0-9.]*' | sort -V | tail -n 1)
+	if [ -z "$VERSION" ]; then
+		printf "unknown\n"
+		exit 1
+	fi
+	printf "%s\n" "$VERSION"
+	LATEST_LINK=https://downloads.cloudbees.com/$RELEASE/rolling/war/$VERSION/jenkins.war
+elif [ "$RELEASE" = "cjoc" ]; then
+	printf "Installing CloudBees Jenkins Enterprise - Operations Center\n"
+	printf "Latest upstream version: "
+	VERSION=$(wget -q -O - https://downloads.cloudbees.com/$RELEASE/rolling/war | \
+	grep -o 'href="[^"]*"' | grep -o '[0-9.]*' | sort -V | tail -n 1)
+	if [ -z "$VERSION" ]; then
+		printf "unknown\n"
+		exit 1
+	fi
+	printf "%s\n" "$VERSION"
+	LATEST_LINK=https://downloads.cloudbees.com/$RELEASE/rolling/war/$VERSION/jenkins-oc.war
+else
+	printf "Installing Jenkins %s\n" "$RELEASE"
+	LATEST_LINK=http://mirrors.jenkins.io/$RELEASE/latest/jenkins.war
+fi
+
+cd /opt || exit 1
+FILENAME="${LATEST_LINK##*/}"
+
+# check for modification by comparing checksum
+printf "\nGet checksum ... "
+SUM_REMOTE=$(wget -q -O - "${LATEST_LINK}.sha256" | grep -o '^[0-9a-z]*')
+if [ "$SUM_REMOTE" ]; then
+	printf "OK\n"
+	[ -f "$FILENAME" ] && SUM_LOCAL=$(sha256sum "$FILENAME" 2>/dev/null  | grep -o '^[0-9a-z]*')
+	if [ "$SUM_LOCAL" = "$SUM_REMOTE" ]; then
+		printf "%s is up to date, nothing to do.\n" "$FILENAME"
+		exit
+	fi
+else
+	printf "failed\n"
+fi
+
+# download
+printf "\nDownloading Jenkins ...\n\n"
+[ -f "$FILENAME" ] && rm -f "$FILENAME"
+wget -nd -4 --progress=dot:giga $LATEST_LINK || exit 1
+# verify checksum
+if [ "$SUM_REMOTE" ]; then
+	SUM_LOCAL=$(sha256sum "$FILENAME" 2>/dev/null)
+	if [ "$SUM_LOCAL" ] && [ "$SUM_LOCAL" != "$SUM_REMOTE" ]; then
+		printf " !!!WARNING!!! - file /opt/%s checksum mismatch\n\n" "$FILENAME"
+		exit 1
+	fi
+fi
+
+printf "Start Jenkins by running:\n\n  java -jar /opt/%s --httpPort=9090\n\nDONE\n" \
+  "$FILENAME"

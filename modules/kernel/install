@@ -43,7 +43,8 @@ SHARE=
 ###########################################################
 
 # use configuration files to override the defaults above
-[ -r "${0%/*}/conf" ] && . "${0%/*}/conf"
+MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
+[ -r "$MODULE_PATH/conf" ] && . "$MODULE_PATH/conf"
 [ -r /etc/default/kernel-update ] && . /etc/default/kernel-update
 
 # parse parameters

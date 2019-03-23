@@ -36,7 +36,7 @@ fi
 
 printf "Installing Slack ... "
 export DEBIAN_FRONTEND=noninteractive
-dpkg --force-confdef -i "$DEB_FILE"
+dpkg --force-confdef -i "$DEB_FILE" || exit 1
 if [ $? -ne 0 ]; then
 	if [ "$(command -v aptitude)" ]; then
 		APTINST=aptitude
