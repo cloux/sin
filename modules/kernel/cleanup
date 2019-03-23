@@ -24,7 +24,7 @@ MODULES="$(find /lib/modules -mindepth 1 -maxdepth 1 -type d -printf "%f\n")"
 OBSOLETE="$(printf "%s\n%s" "$KERNELS" "$MODULES" | sort | uniq -u)"
 for over in $OBSOLETE; do
 	printf "Delete modules directory: /lib/modules/%s ..." "$over"
-	rm -rf "/lib/modules/$odir"
+	rm -rf "/lib/modules/$over"
 	printf "OK\n"
 done
 

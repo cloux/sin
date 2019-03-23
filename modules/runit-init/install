@@ -115,13 +115,14 @@ else
 	git clone -q $RUNIT_BASE_GIT || exit 1
 	cd ${RUNIT_BASE_GIT##*/}
 fi
-if [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
-	# generate clean distribution and overwrite everything
+if grep -vq runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
+	# overwrite everything
 	printf "OVERWRITE runit-base ...\n"
-	rm -rf /etc/sv/
+	rm -rf /etc/sv/ /etc/runit/
 	cp -pfPR -t / etc
 else
-	# copy only new files, notify about differences
+	# if runit is PID1 and overwrite is not forced,
+	# copy only new files, notify about differences,
 	# do not overwrite local user changes and customizations
 	cp -pnvPR -t / etc
 	printf "These runit-base files differ:\n"
@@ -167,8 +168,9 @@ fi
 # activate runit supervision for currently running services
 #
 printf "\nDetect and activate current services ...\n\n"
-for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim php-fpm \
-postfix proftpd redis-server redis-sentinel rpcbind smbd udevd uuidd wicd; do
+for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim \
+  php-fpm postfix proftpd redis-server redis-sentinel rpcbind rpc.mountd \
+  smbd udevd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf "Found $PROCNAME: %s\n" "$SRV"
