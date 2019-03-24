@@ -24,8 +24,9 @@ if [ "$(pgrep runsvdir)" ]; then
 			mv -f /etc/init.d/$SRVNAME.sysv /etc/init.d/$SRVNAME 2>/dev?null
 			# delete rc.d symlinks
 			find /etc/ -type l -path '/etc/rc?.d/[KS]*'$SRVNAME -delete
-		else
+		elif [ -d /etc/sv/$SRVNAME ]; then
 			svactivate $SRVNAME
+			sleep 0.5
 		fi
 	done
 else

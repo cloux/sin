@@ -118,7 +118,7 @@ fi
 if grep -vq runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
 	# overwrite everything
 	printf "OVERWRITE runit-base ...\n"
-	rm -rf /etc/sv/ /etc/runit/
+	rm -rf /etc/sv/ /etc/runit/autorun/ /etc/runit/[1-3]
 	cp -pfPR -t / etc
 else
 	# if runit is PID1 and overwrite is not forced,
@@ -140,6 +140,9 @@ for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
 done
 for xfile in start-statd.runit update-rc.d.runit; do
 	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
+done
+for xfile in pidof.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /bin/$xfile
 done
 # copy config files
 [ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \

@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Some package scripts (preinst,postinst,prerm,postrm...) might
+# require working pidof, which is available only for sysvinit.
+# This is a pidof-compatibile script for runit-init, required
+# in order for system installers not to break.
+#
+# (cloux@rote.ch)
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+if [ "$(pgrep runsvdir)" ]; then
+	# runit service management
+	while getopts ':scxo:' OPT 2>/dev/null; do
+		case $OPT in
+			s) SINGLE=yes ;;
+			o) OMIT="$OMIT $OPTARG " ;;
+			c | x | *) ;;
+		esac
+	done
+	shift "$(($OPTIND - 1))"
+	for SRV in $*; do
+		REALPATH="$(readlink -fn "$(command -v "$SRV")")"
+		[ -f "$REALPATH" ] || continue
+		for PID in $(pgrep -f -d ' ' "$REALPATH"); do
+			if printf "%s\n" "$OMIT" | grep -vq " $PID "; then
+				printf "%s\n" "$PID"
+				[ "$SINGLE" ] && exit
+			fi
+		done
+	done
+else
+	# for other init systems, run the original pidof
+	[ -x /bin/pidof.sysv ] && /bin/pidof.sysv $@
+fi
