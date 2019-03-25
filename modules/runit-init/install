@@ -175,7 +175,7 @@ fi
 printf "\nDetect and activate current services ...\n\n"
 for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim \
   php-fpm postfix proftpd redis-server redis-sentinel rpcbind rpc.mountd \
-  smbd udevd uuidd wicd; do
+  smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf "Found $PROCNAME: %s\n" "$SRV"
@@ -221,6 +221,16 @@ SRV="$(pgrep -a pure-ftpd)"
 if [ "$SRV" ]; then
 	printf "Found pureftpd: %s\n" "$SRV"
 	ln -sf /etc/sv/pureftpd /etc/service/
+fi
+SRV="$(pgrep -ax udevd)"
+if [ "$SRV" ]; then
+	if [ -f /etc/init.d/eudev ]; then
+		printf "Found eudev: %s\n" "$SRV"
+		ln -sf /etc/sv/eudev /etc/service/
+	else
+		printf "Found udevd: %s\n" "$SRV"
+		ln -sf /etc/sv/udevd /etc/service/
+	fi
 fi
 SRV="$(pgrep -af sbin/sshd)"
 if [ "$SRV" ]; then
