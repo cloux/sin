@@ -2,8 +2,7 @@
 #
 # Some scripts (deb installer, acpi poweroff, etc.) might
 # require working pidof, which is available only for sysvinit.
-# This is a pidof-compatibile script for runit-init, required
-# in order for system installers not to break.
+# This is a pidof-compatibile script for runit-init.
 # see: http://man7.org/linux/man-pages/man1/pidof.1.html
 #
 # (cloux@rote.ch)
@@ -11,13 +10,6 @@
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 RET=1
-# if runit supervisor is not running, use the original pidof
-if [ -z "$(pgrep runsvdir)" ]; then
-	[ -x /bin/pidof.sysv ] && RET=$(/bin/pidof.sysv $@)
-	exit $RET
-fi
-
-# runit service management
 while getopts ':scxo:' OPT 2>/dev/null; do
 	case $OPT in
 		s) SINGLE=yes ;;
@@ -32,8 +24,8 @@ for SRV in $*; do
 	for PID in $(pgrep -f -d ' ' "$REALPATH"); do
 		if printf "%s\n" "$OMIT" | grep -vq " $PID "; then
 			printf "%s\n" "$PID"
-			RET=0
 			[ "$SINGLE" ] && exit
+			RET=0
 		fi
 	done
 done
