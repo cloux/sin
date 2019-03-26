@@ -21,20 +21,19 @@ MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 # check root access
 if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
 
-printf "Installing runit-init ...\n\n"
-
 #
 # check OS distribution
 #
 DISTRO=$(lsb_release -i 2>/dev/null | sed 's/.*\s//')
-printf "System info: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
+printf "OS: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
 
 #
 # manage package dependencies
 #
 APTINST="$(command -v aptitude)"
 [ "$APTINST" ] || APTINST="$(command -v apt-get)" 
-if [ "$APTINST" ] && dpkg -l udev 2>/dev/null | grep -q ^ii; then
+if [ "$APTINST" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; then
+	printf "Manage dependencies ...\n\n"
 	export DEBIAN_FRONTEND=noninteractive
 	printf "Update list of available packages ...\n"
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update
@@ -44,12 +43,13 @@ if [ "$APTINST" ] && dpkg -l udev 2>/dev/null | grep -q ^ii; then
 	printf "Remove conflicting packages ...\n"
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 remove \
 	  runit runit-init getty-run
+	printf "\n"
 fi
 
 #
 # runit-init (git clone/pull and compile)
 #
-printf "\nInstalling runit-init from %s ...\n" "$RUNIT_GIT"
+printf "Installing runit from %s ...\n" "$RUNIT_GIT"
 cd /usr/src
 if [ -d "${RUNIT_GIT##*/}" ]; then
 	cd ${RUNIT_GIT##*/}
@@ -71,17 +71,14 @@ cd runit*
 # compile & check
 package/compile || exit 1
 #package/check || exit 1
-# install manpages
 package/install-man
-# install runit-init, use the same target paths as the DEB package
+printf "Installing commands ...\n"
+# use the same target paths as the DEB package
 cd command || exit 1
-printf "\nInstalling runit-init commands ...\n"
 cp -puvf -t /sbin/ runit runit-init
 cp -puvf -t /usr/sbin/ runsvchdir utmpset
 cp -puvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
 cd ..
-# clean up
-#rm -rf command/ compile/
 # install bash completion
 cd ..
 if [ -d /usr/share/bash-completion/completions ]; then
@@ -118,36 +115,16 @@ fi
 if grep -vq runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
 	# overwrite everything
 	printf "OVERWRITE runit-base ...\n"
-	rm -rf /etc/sv/ /etc/runit/autorun/ /etc/runit/[1-3]
+	rm -rf /etc/runit/autorun/ /etc/runit/[1-3]
 	cp -pfPR -t / etc
 else
 	# if runit is PID1 and overwrite is not forced,
 	# copy only new files, notify about differences,
 	# do not overwrite local user changes and customizations
 	cp -pnvPR -t / etc
-	printf "These runit-base files differ:\n"
+	printf "Differences in %s source:\n" "${PWD}"
 	find etc -type f -exec diff -q '{}' /'{}' 2>/dev/null \;
-	printf "\n"
 fi
-
-#
-# copy support scripts and config files
-#
-printf "\nInstalling runit system compatibility scripts ...\n"
-# copy non-conflicting scripts
-for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
-done
-for xfile in start-statd.runit update-rc.d.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
-done
-for xfile in pidof.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /bin/$xfile
-done
-# copy config files
-[ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
-  /etc/apt/preferences.d/runit-init 2>/dev/null
-printf "done\n\n"
 
 #
 # install socklog using a separate installer
@@ -162,10 +139,28 @@ else
 fi
 
 #
+# copy support scripts and config files
+#
+printf "\nInstalling system compatibility scripts ...\n"
+# copy non-conflicting scripts
+for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
+done
+for xfile in start-statd.runit update-rc.d.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
+done
+for xfile in pidof.runit; do
+	cp -pufv "${MODULE_PATH}/inst/$xfile" /bin/$xfile
+done
+# copy config files
+[ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
+  /etc/apt/preferences.d/runit-init 2>/dev/null
+
+#
 # exit if runit is already PID1
 #
 if grep -q runit /proc/1/cmdline; then
-	printf "\nUPDATE COMPLETE!\n\n"
+	printf "\nUPDATE COMPLETE\n"
 	exit
 fi
 
@@ -247,7 +242,7 @@ else
 	rm -f /etc/service/X11dm
 fi
 
-printf "\nINSTALLATION COMPLETE!\n\n"
+printf "\nINSTALLATION COMPLETE\n\n"
 printf " To switch to runit-init system, tell the kernel to use runit:\n"
 printf "  1. edit /etc/default/grub and add\n"
 printf "     GRUB_CMDLINE_LINUX_DEFAULT=\"init=/sbin/runit-init\"\n"
