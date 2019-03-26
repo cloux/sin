@@ -24,7 +24,7 @@ if [ -d "${SOCKLOG_GIT##*/}" ]; then
 	cd ${SOCKLOG_GIT##*/}
 	git fetch -q --all || exit 1
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
-		printf "Socklog source is up to date, nothing to do.\n"
+		printf "Source is up to date.\n"
 	else
 		git pull -q || exit 1
 	fi
