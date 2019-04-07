@@ -20,7 +20,7 @@ SSH_USER=admin
 #SSH_USER=ec2-user
 
 if [ ! -e "$SSH_KEYFILE" ]; then
-	echo -e "Keyfile '$SSH_KEYFILE' not found.\nSet the SSH_KEYFILE variable first."
+	printf 'Keyfile %s not found.\nSet the SSH_KEYFILE variable first.\n' "$SSH_KEYFILE"
 	exit
 fi
 
@@ -31,5 +31,5 @@ elif [ "$1" ]; then
 elif [ "$DEFAULT_SERVER_ADDR" ]; then
 	ssh -i "$SSH_KEYFILE" "$SSH_USER"@"$DEFAULT_SERVER_ADDR"
 else
-	echo "Enter parameter: IPADDR, or USER@ADDR"
+	printf 'Enter parameter: IPADDR, or USER@ADDR\n'
 fi

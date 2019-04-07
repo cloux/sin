@@ -13,18 +13,15 @@
 # (cloux@rote.ch)
 ###########################################################
 
-printf "PHP-FPM - Download, compile and install the latest stable release\n\n"
+printf 'PHP-FPM - Download, compile and install the latest stable release\n\n'
 
 # Need to be root
-if [ $(id -u) -ne 0 ]; then
-	printf "Need to be root!\n"
-	exit 1
-fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # Check dependencies
-for DEP in gcc bison re2c gawk sed wget autoconf automake bzip2; do
+for DEP in gcc bison re2c gawk sed wget autoconf automake bzip2 freetype-config; do
 	if [ -z "$(command -v $DEP)" ]; then
-		printf "ERROR: Please install '%s' to continue.\n" "$DEP"
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
 		exit 1
 	fi
 done
@@ -32,37 +29,37 @@ done
 #
 # Download
 #
-MAIN_SITE="http://php.net"
-LATEST_STABLE_MIRRORS="$MAIN_SITE"$(wget -q -O - "$MAIN_SITE"/downloads.php 2>/dev/null | grep '/get/php' | grep -o '/get/[^"]*' | grep '\.xz/' | sort -n | tail -n 1)
-LATEST_STABLE_LINK=$(wget -q -O - $LATEST_STABLE_MIRRORS 2>/dev/null | grep 'tar\.xz' | grep -o 'http[^"]*tar\.xz[^"]*' | sort -R | head -n 1)
-SRC_XZ=$(printf "%s" "$LATEST_STABLE_LINK" | grep -o '[^/]*tar\.xz[^/]*')
-if [ ! "$SRC_XZ" ]; then
-	printf "Error: PHP download link not found.\n"
+MAIN_SITE="https://www.php.net"
+LATEST_STABLE_LINK="$MAIN_SITE"/$(wget -q -O - "$MAIN_SITE"/downloads.php 2>/dev/null | \
+  grep -o 'href="[^"]*\.xz"' | sed 's/^href=.//' | sed 's/"//g' | sort -V | tail -n 1)
+SRC_XZ="${LATEST_STABLE_LINK##*/}"
+if [ -z "$SRC_XZ" ]; then
+	printf 'Error: PHP download link not found.\n'
 	exit
 fi
 cd /usr/src
 if [ -f "$SRC_XZ" ]; then
-	printf "INFO: File %s already exists, skip download.\n" "/usr/src/$SRC_XZ"
+	printf 'INFO: File %s already exists, skip download.\n' "/usr/src/$SRC_XZ"
 else
-	printf "Download: %s\n\n" "$SRC_XZ"
+	printf 'Download: %s\n\n' "$SRC_XZ"
 	wget -O $SRC_XZ $LATEST_STABLE_LINK
 fi
 if [ ! -f "$SRC_XZ" ]; then
-	printf "\nError: PHP source file %s download failed.\n" "$SRC_XZ"
+	printf '\nError: PHP source file %s download failed.\n' "$SRC_XZ"
 	exit
 fi
 
 #
 # Unpack
 #
-printf "Unpacking ..."
-SRC_DIR=$(printf "%s" $SRC_XZ | sed 's/.tar.xz//')
+printf 'Unpacking ...'
+SRC_DIR=$(printf '%s' $SRC_XZ | sed 's/.tar.xz//')
 [ -d "$SRC_DIR" ] && rm -rf "$SRC_DIR"
 tar xJf $SRC_XZ
 if [ -d "$SRC_DIR" ]; then
-	printf "OK\n"
+	printf 'OK\n'
 else
-	printf "FAILED\n"
+	printf 'FAILED\n'
 	exit
 fi
 cd "$SRC_DIR"
@@ -71,8 +68,8 @@ cd "$SRC_DIR"
 # Configure
 #
 PHP_VERSION=$(grep 'PHP_VERSION ' main/php_version.h 2>/dev/null | grep -o '[0-9][0-9]*\.[0-9]*')
-[ "$PHP_VERSION" ] || PHP_VERSION=$(printf "%s" "$SRC_DIR" | grep -o '[0-9][0-9]*\.[0-9]*')
-printf "\nConfigure PHP-FPM v%s ...\n\n" "$PHP_VERSION" | tee "../php-$PHP_VERSION.build.log"
+[ "$PHP_VERSION" ] || PHP_VERSION=$(printf '%s' "$SRC_DIR" | grep -o '[0-9][0-9]*\.[0-9]*')
+printf '\nConfigure PHP-FPM v%s ...\n\n' "$PHP_VERSION" | tee "../php-$PHP_VERSION.build.log"
 # optimize for native platform, don't generate debug info (-g)
 export CFLAGS="-O2 -march=native"
 export CXXFLAGS="-O2 -march=native"
@@ -92,17 +89,17 @@ export CXXFLAGS="-O2 -march=native"
 --with-config-file-path="/etc/php/$PHP_VERSION/fpm" \
 --with-config-file-scan-dir="/etc/php/$PHP_VERSION/fpm/conf.d" | tee -a "../php-$PHP_VERSION.build.log"
 if [ ! -s Makefile ]; then
-	printf "\nERROR: configuring PHP failed.\n"
+	printf '\nERROR: configuring PHP failed.\n'
 	exit
 fi
 
 #
 # Compile
 #
-printf "\nCompile PHP-FPM ...\n\n" | tee -a "../php-$PHP_VERSION.build.log"
+printf '\nCompile PHP-FPM ...\n\n' | tee -a "../php-$PHP_VERSION.build.log"
 nice -n 1 make -j $(nproc 2>/dev/null) 2>&1 | tee -a "../php-$PHP_VERSION.build.log"
 if [ ! -x sapi/fpm/php-fpm ]; then
-	printf "\nERROR: output file sapi/fpm/php-fpm not found!\n"
+	printf '\nERROR: output file sapi/fpm/php-fpm not found!\n'
 	exit
 fi
 
@@ -121,12 +118,12 @@ if [ -d "$EXT_DIR" ]; then
 	INI_DIR="/etc/php/$PHP_VERSION/extensions"
 	[ -d "$INI_DIR" ] || mkdir -p "$INI_DIR"
 	for extension in "$EXT_DIR"/*.so; do
-		INI_FILE=$(printf "%s" "$extension" | grep -o '[^/]*$' | sed 's/so$/ini/')
-		printf " Configure shared extension: %s - %s\n" "${extension##*/}" "$INI_DIR/$INI_FILE"
+		INI_FILE=$(printf '%s' "$extension" | grep -o '[^/]*$' | sed 's/so$/ini/')
+		printf ' Configure shared extension: %s - %s\n' "${extension##*/}" "$INI_DIR/$INI_FILE"
 		if [ "$INI_FILE" = "opcache.ini" ] || [ "$INI_FILE" = "xdebug.ini" ]; then
-			printf "zend_extension=%s\n" "$extension" > "$INI_DIR/$INI_FILE"
+			printf 'zend_extension=%s\n' "$extension" > "$INI_DIR/$INI_FILE"
 		else
-			printf "extension=%s\n" "$extension" > "$INI_DIR/$INI_FILE"
+			printf 'extension=%s\n' "$extension" > "$INI_DIR/$INI_FILE"
 		fi
 	done
 fi
@@ -134,12 +131,12 @@ fi
 #
 # Cleanup
 #
-printf "\nCleanup ..."
+printf '\nCleanup ...'
 cd /usr/src
 rm -rf "/usr/src/$SRC_DIR"
 #rm -f "/usr/src/$SRC_XZ"
-printf "OK\n"
+printf 'OK\n'
 
-printf "\nDONE\n"
+printf '\nDONE\n'
 exit
 

@@ -6,27 +6,27 @@
 #
 
 # need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 if [ ! -x "$(command -v kexec)" ]; then
-	printf "ERROR: kexec command not found, direct kernel boot failed.\n"
+	printf 'ERROR: kexec command not found, direct kernel boot failed.\n'
 	exit 1
 fi
 
 LATEST_KERNEL=$(ls -1t /boot/vmlinuz* 2>/dev/null | head -n 1)
 if [ ! -s "$LATEST_KERNEL" ]; then
-	printf "ERROR: No vmlinuz kernel image found in /boot.\n"
+	printf 'ERROR: No vmlinuz kernel image found in /boot.\n'
 	exit 1
 fi
 
 CURRENT_KERNEL=$(grep -o 'BOOT_IMAGE[^ ]*' /proc/cmdline | grep -o '[^=]*$')
 if [ "$LATEST_KERNEL" = "$CURRENT_KERNEL" ]; then
-	printf "Latest kernel %s is already active, nothing to do.\n" "$LATEST_KERNEL"
+	printf 'Latest kernel %s is already active, nothing to do.\n' "$LATEST_KERNEL"
 	exit
 fi
 
-printf "Loading kernel %s ...\n" "$LATEST_KERNEL"
+printf 'Loading kernel %s ...\n' "$LATEST_KERNEL"
 kexec -l "$LATEST_KERNEL" --reuse-cmdline
 
-printf "Reboot to the new kernel ...\n"
+printf 'Reboot to the new kernel ...\n'
 ctrlaltdel soft

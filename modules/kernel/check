@@ -7,7 +7,7 @@
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 
 if [ ! -x "${MODULE_PATH}/install" ]; then
-	printf "Error: %s not found." "${MODULE_PATH}/install"
+	printf 'Error: %s not found\n' "${MODULE_PATH}/install"
 	exit 1
 fi
 

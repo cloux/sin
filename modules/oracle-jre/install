@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 if [ ! -x "$(command -v make-jpkg)" ]; then
-	printf "Installing 'java-package' ...\n"
+	printf 'Installing java-package ...\n'
 	apt-get --assume-yes -o Dpkg::Use-Pty=0 install java-package || exit 1
 fi
 
@@ -12,18 +12,18 @@ trap "rm -rf $TMP_DIR" 0 1 2 3 9 15
 chmod 777 $TMP_DIR
 cd $TMP_DIR
 
-printf "Searching for Oracle JRE update ...\n"
+printf 'Searching for Oracle JRE update ...\n'
 wget -q -4 "https://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html" || exit 1
 INSTALLER_LINK=$(grep -o 'http[^"]*linux-x64.tar.gz' jre8-downloads-2133155.html | sort -n | tail -n 1)
-INSTALLER_FILE=$(printf "%s" "$INSTALLER_LINK" | grep -o '[^/]*$')
-VER_MAJ=$(printf "%s" "$INSTALLER_FILE" | grep -o '[0-9]*u' | grep -o '[0-9]*')
-VER_UPD=$(printf "%s" "$INSTALLER_FILE" | grep -o 'u[0-9]*' | grep -o '[0-9]*')
+INSTALLER_FILE=$(printf '%s' "$INSTALLER_LINK" | grep -o '[^/]*$')
+VER_MAJ=$(printf '%s' "$INSTALLER_FILE" | grep -o '[0-9]*u' | grep -o '[0-9]*')
+VER_UPD=$(printf '%s' "$INSTALLER_FILE" | grep -o 'u[0-9]*' | grep -o '[0-9]*')
 DEB_FILE=oracle-java${VER_MAJ}-jre_${VER_MAJ}u${VER_UPD}_amd64.deb
 
-printf "Latest Oracle JRE version: %su%s\n\n" "$VER_MAJ" "$VER_UPD"
+printf 'Latest Oracle JRE version: %su%s\n\n' "$VER_MAJ" "$VER_UPD"
 
 if [ -f "$ARCHIVE_DIR/$DEB_FILE" ]; then
-	printf "Package available: %s/%s\n" "$ARCHIVE_DIR" "$DEB_FILE"
+	printf 'Package available: %s/%s\n' "$ARCHIVE_DIR" "$DEB_FILE"
 	exit 1
 fi
 
@@ -35,4 +35,4 @@ su $(id -un 1000) -c "yes 2>/dev/null | make-jpkg $INSTALLER_FILE 2>/dev/null"
 [ -d "$ARCHIVE_DIR" ] && cp "$DEB_FILE" "$ARCHIVE_DIR"
 dpkg -i "$DEB_FILE" || exit 1
 
-printf "\nDONE\n"
+printf '\nDONE\n'

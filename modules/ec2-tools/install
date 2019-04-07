@@ -4,30 +4,30 @@
 #
 
 # need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # Install all scripts from 'inst' into /usr/local/bin/
 find ${0%/*}/inst -maxdepth 1 -type f -perm /111 -exec cp -uvpP -t /usr/local/bin/ '{}' \;
 
 # Install ec2-metadata from Amazon
 if [ -x /usr/local/bin/ec2-metadata ]; then
-	printf "Update "
+	printf 'Update '
 else
-	printf "Install "
+	printf 'Install '
 fi
-printf "ec2-metadata tool ... "
+printf 'ec2-metadata tool ... '
 cd /tmp || exit
 rm -f ec2-metadata
 wget -N -q http://s3.amazonaws.com/ec2metadata/ec2-metadata
 if [ $? -ne 0 ] || [ ! -f ec2-metadata ]; then
-	printf "download FAILED\n"
+	printf 'download FAILED\n'
 	exit 1
 fi
 if head -n 1 ec2-metadata | grep -vq '^#!'; then
-	printf "FAILED: downloaded file is not a script!\n"
+	printf 'FAILED: downloaded file is not a script!\n'
 	rm -f ec2-metadata
 	exit 1
 fi
 chmod 755 ec2-metadata
 mv -f ec2-metadata /usr/local/bin/
-printf "DONE\n"
+printf 'DONE\n'

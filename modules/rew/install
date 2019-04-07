@@ -9,19 +9,19 @@
 DOWNLOAD_PAGE="https://www.roomeqwizard.com"
 
 if [ -z "$DESKTOP_SESSION" ] && [ -z "$GDMSESSION" ]; then
-	printf "ERROR: REW installer requires a desktop session.\n"
+	printf 'ERROR: REW installer requires a desktop session.\n'
 	exit 1
 fi
 
-printf "Searching for REW installer ... "
+printf 'Searching for REW installer ... '
 INSTALLER_SH="$DOWNLOAD_PAGE/"$(curl "$DOWNLOAD_PAGE" 2>/dev/null | grep -oi '[^"]*REW_linux_[^"]*')
-SH_FILE=$(printf "%s" "$INSTALLER_SH" | grep -o '[^/]*$')
+SH_FILE=$(printf '%s' "$INSTALLER_SH" | grep -o '[^/]*$')
 if [ -z "$SH_FILE" ]; then
-	printf "not found.\n"
+	printf 'not found.\n'
 	exit 1
 fi
-SH_VERSION=$(printf "%s" "$SH_FILE" | grep -o '[0-9][0-9_]*')
-printf "found version: %s\n" $SH_VERSION
+SH_VERSION=$(printf '%s' "$SH_FILE" | grep -o '[0-9][0-9_]*')
+printf 'found version: %s\n' $SH_VERSION
 
 ARCHIVE_DIR=~/.cache/sin
 [ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
@@ -31,16 +31,16 @@ cd $ARCHIVE_DIR || exit 1
 wget -4 -N -nd --progress=dot:giga "$INSTALLER_SH" || exit 1
 MTIME_NOW=$(stat --format=%Y "$SH_FILE")
 if [ "$MTIME_BEFORE" = "$MTIME_NOW" ]; then
-	printf "Latest release %s (%s) already downloaded, nothing to do.\n\n" \
+	printf 'Latest release %s (%s) already downloaded, nothing to do.\n\n' \
 	"$SH_FILE" "$(stat --format=%y "$SH_FILE" | grep -o '^[^ ]*')"
 	exit
 fi
 
-printf "Running %s/%s ...\n" "$ARCHIVE_DIR" "$SH_FILE"
+printf 'Running %s/%s ...\n' "$ARCHIVE_DIR" "$SH_FILE"
 chmod 755 "$SH_FILE"
 nohup "$ARCHIVE_DIR/$SH_FILE" >/dev/null &
 
-printf "Delete old packages ...\n"
+printf 'Delete old packages ...\n'
 find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname 'REW*' ! -iname "$SH_FILE" -delete
 
-printf "\nDONE\n\n"
+printf '\nDONE\n\n'

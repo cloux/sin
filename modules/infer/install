@@ -9,7 +9,7 @@
 INFER_DOWNLOAD_PAGE="https://github.com/facebook/infer/releases/latest"
 
 # need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # use archive directory
 ARCHIVE_DIR=/var/cache/sin
@@ -17,38 +17,38 @@ ARCHIVE_DIR=/var/cache/sin
 cd $ARCHIVE_DIR || exit 1
 
 # find latest version
-printf "Searching for Infer installer ... "
+printf 'Searching for Infer installer ... '
 INFER_LINK=$(wget -q "$INFER_DOWNLOAD_PAGE" -O - 2>/dev/null | grep -o '/facebook[^"]*download/[^"]*infer-linux[^"]*\.tar\.xz')
 if [ -z "$INFER_LINK" ]; then
-	printf "FAILED\n"
+	printf 'FAILED\n'
 	exit 1
 fi
 INFER_LINK="https://github.com"$INFER_LINK
-TAR_FILE=$(printf "%s" "$INFER_LINK" | grep -o '[^/]*$')
-INFER_VER=$(printf "%s" "$TAR_FILE" | grep -o 'v[0-9.]*[0-9]')
+TAR_FILE=$(printf '%s' "$INFER_LINK" | grep -o '[^/]*$')
+INFER_VER=$(printf '%s' "$TAR_FILE" | grep -o 'v[0-9.]*[0-9]')
 if [ -z "$INFER_VER" ]; then
-	printf "ERROR - unknown installer version: %s\n" "$TAR_FILE"
+	printf 'ERROR - unknown installer version: %s\n' "$TAR_FILE"
 	exit 1
 fi
-printf "found %s\n\n" "$INFER_VER"
+printf 'found %s\n\n' "$INFER_VER"
 if [ -f "$TAR_FILE" ]; then
-	printf "Latest version is already installed, nothing to do.\n"
+	printf 'Latest version is already installed, nothing to do.\n'
 	exit
 fi
 
 # download
 wget -4 -N -nd --progress=dot:giga "$INFER_LINK" || exit 1
 if [ ! -f "$TAR_FILE" ]; then
-	printf "Download failed.\n"
+	printf 'Download failed.\n'
 	exit 1
 fi
 
 # install
-printf "Installing Infer ... "
+printf 'Installing Infer ... '
 tar -xJf "$TAR_FILE" || exit 1
 INFER_DIR="${TAR_FILE%.tar.xz}"
 if [ ! -d "$INFER_DIR" ]; then
-	printf "ERROR: path %s not found.\n" "$INFER_DIR"
+	printf 'ERROR: path %s not found.\n' "$INFER_DIR"
 	exit 1
 fi
 rm -rf /opt/infer-linux*
@@ -56,7 +56,7 @@ mv -f -t /opt/ "$INFER_DIR"
 [ -x /opt/"$INFER_DIR"/bin/infer ] && ln -sf /opt/"$INFER_DIR"/bin/infer /usr/bin/infer
 
 # cleanup
-printf "Delete old versions ...\n"
+printf 'Delete old versions ...\n'
 find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname 'infer-*' ! -iname "$TAR_FILE" -delete
 
-printf "\nDONE\n\n"
+printf '\nDONE\n\n'

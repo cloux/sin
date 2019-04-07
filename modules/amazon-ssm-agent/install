@@ -3,33 +3,30 @@
 # Install/Update AWS EC2 instance: amazon-ssm-agent
 
 # We need to be root
-if [ $(id -u) -ne 0 ]; then
-	printf "Need to be root!\n" 1>&2
-	exit 1
-fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 SSM_BINDIR=/usr/bin
 [ -d $SSM_BINDIR ] || exit
 if [ -x $SSM_BINDIR/amazon-ssm-agent ]; then
-	printf "Update "
+	printf 'Update '
 else
-	printf "Install "
+	printf 'Install '
 fi
-printf "amazon-ssm-agent ...\n"
+printf 'amazon-ssm-agent ...\n'
 
 if [ -z "$(command -v go)" ]; then
-	printf "FAILED: golang not found.\n"
+	printf 'FAILED: golang not found.\n'
 	exit 1
 fi
 if [ -z "$(command -v git)" ]; then
-	printf "FAILED: git not found.\n"
+	printf 'FAILED: git not found.\n'
 	exit 1
 fi
 
 #SSM_SRCDIR=/usr/lib/go-1.7/src/github.com/aws
 #SSM_SRCDIR=/usr/share/go/src/github.com/aws
 if [ ! -d /usr/lib/go ]; then
-	printf "ERROR: /usr/lib/go directory is missing. Is golang installed?\n"
+	printf 'ERROR: /usr/lib/go directory is missing. Is golang installed?\n'
 	exit 1
 fi
 
@@ -62,20 +59,20 @@ fi
 # link the codebase to /usr/src, to make it more "visible"
 ln -sf "$SSM_SRCDIR/amazon-ssm-agent" /usr/src/
 
-printf "Get additional tools ...\n"
+printf 'Get additional tools ...\n'
 make get-tools
-printf "Build ...\n"
+printf 'Build ...\n'
 make build-linux
 [ $? -eq 0 ] || exit 1
 
 # stop service if running
 if [ "$(pgrep runsvdir)" ] && [ -d /etc/service/amazon-ssm-agent ]; then
-	printf "Stop service ...\n"
+	printf 'Stop service ...\n'
 	sv stop amazon-ssm-agent
 fi
 
 # install compiled ssm-agent
-printf "Installing compiled amazon-ssm-agent ...\n"
+printf 'Installing compiled amazon-ssm-agent ...\n'
 cp -vf bin/linux_amd64/* $SSM_BINDIR/
 [ -d /etc/amazon/ssm ] || mkdir -p /etc/amazon/ssm
 cp -vf bin/amazon-ssm-agent.json.template /etc/amazon/ssm/
@@ -86,13 +83,13 @@ sed -i 's/.*<console.*\/>.*//' /etc/amazon/ssm/seelog.xml
 
 # start service after update
 if [ "$(pgrep runsvdir)" ] && [ -d /etc/service/amazon-ssm-agent ]; then
-	printf "Start service ...\n"
+	printf 'Start service ...\n'
 	sv start amazon-ssm-agent
 fi
 
 # cleanup (240 MB -> 175 MB)
-printf "Cleanup ...\n"
+printf 'Cleanup ...\n'
 make clean
 #rm -rf "$SSM_SRCDIR"
 
-printf "DONE\n"
+printf 'DONE\n'

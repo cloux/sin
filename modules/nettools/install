@@ -3,9 +3,9 @@
 # Network helper scripts
 # (cloux@rote.ch)
 
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
-printf "Installing nettools scripts ...\n"
+printf 'Installing nettools scripts ...\n'
 
 # install scripts in this directory into /usr/local/bin
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
@@ -14,4 +14,4 @@ find "$MODULE_PATH" -maxdepth 1 -type f -perm /111 ! -name install -exec cp -puf
 # install config files
 cp -puv -t /etc/default/ "$MODULE_PATH"/public-domain
 
-printf "\nDONE\n"
+printf '\nDONE\n'

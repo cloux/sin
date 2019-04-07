@@ -16,7 +16,7 @@ if [ "$(pgrep runsvdir)" ]; then
 	done
 	shift "$(($OPTIND - 1))"
 	for SRV in $*; do
-		SRVNAME=$(printf "%s" "$SRV" | grep -o '^[^,]*')
+		SRVNAME=$(printf '%s' "$SRV" | grep -o '^[^,]*')
 		[ "$SRVNAME" ] || continue
 		if [ "$DEACTIVATE" ]; then
 			svdeactivate $SRVNAME

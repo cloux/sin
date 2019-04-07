@@ -2,8 +2,8 @@
 # Uninstall SIN and all its modules
 # (cloux@rote.ch)
 
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
-printf "Uninstalling SIN ... "
+printf 'Uninstalling SIN ... '
 rm -rf /usr/local/share/sin /usr/share/sin /usr/bin/sin /var/log/sin /var/cache/sin
-printf "DONE\n"
+printf 'DONE\n'

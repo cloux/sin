@@ -48,14 +48,11 @@ hiawatha_start () {
 }
 
 # Make sure that I'm root
-if [ "$(id -u)" != "0" ]; then
-	printf "Need to be root!\n"
-	exit 1
-fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 export DEBIAN_FRONTEND=noninteractive
 if [ -z "$(command -v hiawatha)" ]; then
-	printf "Hiawatha not found. Install dependencies ...\n"
+	printf 'Hiawatha not found. Install dependencies ...\n'
 	APTINST=
 	if [ "$(command -v aptitude)" ]; then
 		APTINST=aptitude
@@ -67,12 +64,12 @@ if [ -z "$(command -v hiawatha)" ]; then
 		         libxml2-dev libxslt1.1 libxslt1-dev libc6-dev libssl-dev \
 		         zlib1g-dev dpkg-dev debhelper fakeroot apache2-utils procps wget
 	else
-		printf "WARNING: Apt packaging system not found, dependencies installation skipped.\n"
+		printf 'WARNING: Apt packaging system not found, dependencies installation skipped.\n'
 	fi
 fi
 
 if [ -z "$(command -v lsof)" ]; then
-	printf "ERROR: lsof not found, exiting.\n"
+	printf 'ERROR: lsof not found, exiting.\n'
 	exit 1
 fi
 
@@ -80,54 +77,54 @@ fi
 cd "$MY_ROOT" || exit 1
 
 LATEST=$(wget -q -O - https://www.hiawatha-webserver.org/latest 2>/dev/null)
-if [ -z "$(printf "%s" "$LATEST" | head -n 1 | grep '^[0-9][0-9.]*$')" ]; then
-	printf "WARNING: Hiawatha latest version checking failed.\n"
-	exit 0
+if [ -z "$(printf '%s' "$LATEST" | head -n 1 | grep '^[0-9][0-9.]*$')" ]; then
+	printf 'WARNING: Hiawatha latest version checking failed.\n'
+	exit
 fi
 if [ -s "$MY_ROOT/hiawatha-$LATEST.tar.gz" ]; then
-	printf "Latest Hiawatha v%s already downloaded.\n" "$LATEST"
-	exit 0
+	printf 'Latest Hiawatha v%s already downloaded.\n' "$LATEST"
+	exit
 fi
 
-printf "Downloading new Hiawatha v%s ..." "$LATEST"
+printf 'Downloading new Hiawatha v%s ...' "$LATEST"
 wget -q -O "$MY_ROOT/hiawatha-$LATEST.tar.gz" "https://www.hiawatha-webserver.org/files/hiawatha-$LATEST.tar.gz"
 if [ -s "$MY_ROOT/hiawatha-$LATEST.tar.gz" ]; then
-	printf "OK\n"
+	printf 'OK\n'
 else
-	printf "FAILED\n"
+	printf 'FAILED\n'
 	rm -f "$MY_ROOT/hiawatha-$LATEST.tar.gz"
-	exit 0
+	exit
 fi
 
-printf "Unpacking ..."
+printf 'Unpacking ...'
 tar -xzf "$MY_ROOT/hiawatha-$LATEST.tar.gz" >/dev/null
 if [ $? -ne 0 ]; then
-	printf "ERROR\n"
+	printf 'ERROR\n'
 	exit 1
 fi
-printf "OK\n"
+printf 'OK\n'
 
 if [ ! -d "$MY_ROOT/hiawatha-$LATEST" ]; then
-	printf "ERROR: hiawatha-%s directory not found.\n" "$LATEST"
+	printf 'ERROR: hiawatha-%s directory not found.\n' "$LATEST"
 	exit 1
 fi
 
 EC=1
 if [ "$(command -v dpkg)" ]; then
-	printf "Compiling and packaging ...\n"
+	printf 'Compiling and packaging ...\n'
 	cd "$MY_ROOT/hiawatha-$LATEST/extra" || exit
 	"$MY_ROOT/hiawatha-$LATEST/extra/make_debian_package"
 
 	DEBPAK=$(ls -1 "$MY_ROOT/hiawatha-$LATEST/hiawatha_$LATEST"_*.deb 2>/dev/null | tail -n 1)
 	if [ ! -s "$DEBPAK" ]; then
-		printf "\nFAILED\n"
+		printf '\nFAILED\n'
 		exit 1
 	fi
 
 	# stop hiawatha on supervised init
 	hiawatha_stop
 
-	printf "Installing new %s ...\n" "${DEBPAK##*/}"
+	printf 'Installing new %s ...\n' "${DEBPAK##*/}"
 	dpkg -i --force-all "$DEBPAK"
 	EC=$?
 
@@ -136,14 +133,14 @@ if [ "$(command -v dpkg)" ]; then
 
 	mv "$DEBPAK" "$MY_ROOT"
 else
-	printf "Cmake build ...\n"
+	printf 'Cmake build ...\n'
 	mkdir build
 	cd build || exit
 	cmake ..
 	if [ $? -eq 0 ]; then
 		# stop hiawatha on supervised init
 		hiawatha_stop
-		printf "Make install ...\n"
+		printf 'Make install ...\n'
 		make install/strip
 		EC=$?
 		# start hiawatha after update
@@ -151,21 +148,21 @@ else
 	fi
 fi
 
-printf "Removing temp files ..."
+printf 'Removing temp files ...'
 cd "$MY_ROOT" || exit
 rm -rf "$MY_ROOT/hiawatha-$LATEST"
-printf "DONE\n"
+printf 'DONE\n'
 
 if [ $EC -eq 0 ]; then
 	MSG="Hiawatha webserver successfully updated to v$LATEST."
 else
 	MSG="Hiawatha webserver update to v$LATEST FAILED."
 fi
-printf "%s\n" "$MSG"
+printf '%s\n' "$MSG"
 
 # Email results
 if [ "$MAILTO" ]; then
-	printf "%s\n" "$MSG" | mail -s "$(hostname 2>/dev/null) (IP $(hostname -i 2>/dev/null)) - Hiawatha update v$LATEST" "$MAILTO"
+	printf '%s\n' "$MSG" | mail -s "$(hostname 2>/dev/null) (IP $(hostname -i 2>/dev/null)) - Hiawatha update v$LATEST" "$MAILTO"
 fi
 
 exit $EC

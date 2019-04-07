@@ -19,13 +19,13 @@ MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 [ -f "$MODULE_PATH/config" ] && . "$MODULE_PATH/config"
 
 # check root access
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 #
 # check OS distribution
 #
 DISTRO=$(lsb_release -i 2>/dev/null | sed 's/.*\s//')
-printf "OS: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
+printf 'OS: %s %s\n\n' "$DISTRO" "$(uname -srmo)"
 
 #
 # manage package dependencies
@@ -33,29 +33,29 @@ printf "OS: %s %s\n\n" "$DISTRO" "$(uname -srmo)"
 APTINST="$(command -v aptitude)"
 [ "$APTINST" ] || APTINST="$(command -v apt-get)" 
 if [ "$APTINST" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; then
-	printf "Manage dependencies ...\n\n"
+	printf 'Manage dependencies ...\n\n'
 	export DEBIAN_FRONTEND=noninteractive
-	printf "Update list of available packages ...\n"
+	printf 'Update list of available packages ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update
-	printf "Install dependencies ...\n"
+	printf 'Install dependencies ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install \
 	  libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
-	printf "Remove conflicting packages ...\n"
+	printf 'Remove conflicting packages ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 remove \
 	  runit runit-init getty-run
-	printf "\n"
+	printf '\n'
 fi
 
 #
 # runit-init (git clone/pull and compile)
 #
-printf "Installing runit from %s ...\n" "$RUNIT_GIT"
+printf 'Installing runit from %s ...\n' "$RUNIT_GIT"
 cd /usr/src
 if [ -d "${RUNIT_GIT##*/}" ]; then
 	cd ${RUNIT_GIT##*/}
 	git fetch -q --all || exit 1
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
-		printf "Source is up to date.\n"
+		printf 'Source is up to date.\n'
 	else
 		git pull -q || exit 1
 	fi
@@ -72,12 +72,13 @@ cd runit*
 package/compile || exit 1
 #package/check || exit 1
 package/install-man
-printf "Installing commands ...\n"
+printf 'Installing commands ...\n'
 # use the same target paths as the DEB package
 cd command || exit 1
 cp -puvf -t /sbin/ runit runit-init
 cp -puvf -t /usr/sbin/ runsvchdir utmpset
 cp -puvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
+[ -f /sbin/init ] || ln /sbin/runit-init /sbin/init
 cd ..
 # install bash completion
 cd ..
@@ -97,13 +98,13 @@ fi
 #
 # runit-base (git clone/pull)
 #
-printf "\nInstalling runscripts from %s ...\n" "$RUNIT_BASE_GIT"
+printf '\nInstalling runscripts from %s ...\n' "$RUNIT_BASE_GIT"
 cd /usr/src
 if [ -d ${RUNIT_BASE_GIT##*/} ]; then
 	cd ${RUNIT_BASE_GIT##*/}
 	git fetch -q --all || exit 1
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
-		printf "Source is up to date.\n"
+		printf 'Source is up to date.\n'
 	else
 		git pull -q || exit 1
 	fi
@@ -112,16 +113,16 @@ else
 	git clone -q $RUNIT_BASE_GIT || exit 1
 	cd ${RUNIT_BASE_GIT##*/}
 fi
-if grep -vq runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
+if ! grep -q runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
 	# overwrite everything
-	printf "OVERWRITE runit-base ...\n"
+	printf 'OVERWRITE runit-base ...\n'
 	cp -pfPR -t / etc
 else
 	# if runit is PID1 and overwrite is not forced,
 	# copy only new files, notify about differences,
 	# do not overwrite local user changes and customizations
 	cp -pnvPR -t / etc
-	printf "Differences in %s source:\n" "${PWD}"
+	printf 'Differences in %s source:\n' "${PWD}"
 	find etc -type f -exec diff -q '{}' /'{}' 2>/dev/null \;
 fi
 
@@ -133,14 +134,14 @@ SOCKLOG_INSTALLER="${MODULE_PATH}/../socklog/install"
 if [ -x "$SOCKLOG_INSTALLER" ]; then
 	"$SOCKLOG_INSTALLER"
 else
-	printf "\nWARNING: Socklog installer is missing, expected to be here:\n%s\n" \
+	printf '\nWARNING: Socklog installer is missing, expected to be here:\n%s\n' \
 	"$SOCKLOG_INSTALLER"
 fi
 
 #
 # copy support scripts and config files
 #
-printf "\nInstalling system compatibility scripts ...\n"
+printf '\nInstalling system compatibility scripts ...\n'
 # copy non-conflicting scripts
 for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
 	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
@@ -159,91 +160,91 @@ done
 # exit if runit is already PID1
 #
 if grep -q runit /proc/1/cmdline; then
-	printf "\nUPDATE COMPLETE\n"
+	printf '\nUPDATE COMPLETE\n'
 	exit
 fi
 
 #
 # activate runit supervision for currently running services
 #
-printf "\nDetect and activate current services ...\n\n"
+printf '\nDetect and activate current services ...\n\n'
 for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim \
   php-fpm postfix proftpd redis-server redis-sentinel rpcbind rpc.mountd \
   smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
-		printf "Found $PROCNAME: %s\n" "$SRV"
+		printf 'Found $PROCNAME: %s\n' "$SRV"
 		ln -sf /etc/sv/$PROCNAME /etc/service/
 	fi
 done
 SRV="$(pgrep -ax bluetoothd)"
 if [ "$SRV" ]; then
-	printf "Found bluetooth: %s\n" "$SRV"
+	printf 'Found bluetooth: %s\n' "$SRV"
 	ln -sf /etc/sv/bluetooth /etc/service/
 fi
 SRV="$(pgrep -ax cupsd)"
 if [ "$SRV" ]; then
-	printf "Found cups: %s\n" "$SRV"
+	printf 'Found cups: %s\n' "$SRV"
 	ln -sf /etc/sv/cups /etc/service/
 fi
 SRV="$(pgrep -ax dbus-daemon)"
 if [ "$SRV" ]; then
-	printf "Found dbus: %s\n" "$SRV"
+	printf 'Found dbus: %s\n' "$SRV"
 	ln -sf /etc/sv/dbus /etc/service/
 fi
 SRV="$(pgrep -ax incrond)"
 if [ "$SRV" ]; then
-	printf "Found incron: %s\n" "$SRV"
+	printf 'Found incron: %s\n' "$SRV"
 	ln -sf /etc/sv/incron /etc/service/
 fi
 SRV="$(pgrep -ax mongod)"
 if [ "$SRV" ]; then
-	printf "Found mongodb: %s\n" "$SRV"
+	printf 'Found mongodb: %s\n' "$SRV"
 	ln -sf /etc/sv/mongo /etc/service/
 fi
 SRV="$(pgrep -ax mysqld)"
 if [ "$SRV" ]; then
-	printf "Found mysql: %s\n" "$SRV"
+	printf 'Found mysql: %s\n' "$SRV"
 	ln -sf /etc/sv/mysql /etc/service/
 fi
 SRV="$(pgrep -ax pg_ctlcluster)"
 if [ "$SRV" ]; then
-	printf "Found postgresql: %s\n" "$SRV"
+	printf 'Found postgresql: %s\n' "$SRV"
 	ln -sf /etc/sv/postgresql /etc/service/
 fi
 SRV="$(pgrep -a pure-ftpd)"
 if [ "$SRV" ]; then
-	printf "Found pureftpd: %s\n" "$SRV"
+	printf 'Found pureftpd: %s\n' "$SRV"
 	ln -sf /etc/sv/pureftpd /etc/service/
 fi
 SRV="$(pgrep -ax udevd)"
 if [ "$SRV" ]; then
 	if [ -f /etc/init.d/eudev ]; then
-		printf "Found eudev: %s\n" "$SRV"
+		printf 'Found eudev: %s\n' "$SRV"
 		ln -sf /etc/sv/eudev /etc/service/
 	else
-		printf "Found udevd: %s\n" "$SRV"
+		printf 'Found udevd: %s\n' "$SRV"
 		ln -sf /etc/sv/udevd /etc/service/
 	fi
 fi
 SRV="$(pgrep -af sbin/sshd)"
 if [ "$SRV" ]; then
-	printf "Found ssh: %s\n" "$SRV"
+	printf 'Found ssh: %s\n' "$SRV"
 	ln -sf /etc/sv/ssh /etc/service/
 fi
 # GUI services
 DEFAULT_DISPLAY_MANAGER="$(head -n 1 /etc/X11/default-display-manager 2>/dev/null)"
 if [ -x "$DEFAULT_DISPLAY_MANAGER" ]; then
-	printf "Found display manager: %s - activating X11dm\n" "${DEFAULT_DISPLAY_MANAGER##*/}"
+	printf 'Found display manager: %s - activating X11dm\n' "${DEFAULT_DISPLAY_MANAGER##*/}"
 	ln -sfv /etc/sv/X11dm /etc/service/
 else
-	printf "Display manager not found, deactivating X11dm\n"
+	printf 'Display manager not found, deactivating X11dm\n'
 	rm -f /etc/service/X11dm
 fi
 
-printf "\nINSTALLATION COMPLETE\n\n"
-printf " To switch to runit-init system, tell the kernel to use runit:\n"
-printf "  1. edit /etc/default/grub and add\n"
-printf "     GRUB_CMDLINE_LINUX_DEFAULT=\"init=/sbin/runit-init\"\n"
-printf "  2. run 'update-grub' and reboot.\n\n"
-printf " WARNING: BROKEN INIT SYSTEM MIGHT KILL JOHN WICKS DOG!\n\n"
+printf '\nINSTALLATION COMPLETE\n\n'
+printf ' To switch to runit-init system, tell the kernel to use runit:\n'
+printf '  1. edit /etc/default/grub and add\n'
+printf '     GRUB_CMDLINE_LINUX_DEFAULT="init=/sbin/runit-init"\n'
+printf '  2. run "update-grub" and reboot.\n\n'
+printf ' WARNING: BROKEN INIT SYSTEM MIGHT KILL JOHN WICKS DOG!\n\n'

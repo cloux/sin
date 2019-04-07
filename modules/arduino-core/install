@@ -20,11 +20,11 @@ OFFICIAL_WEBSITE=https://www.arduino.cc/en/Main/Software
 [ -r "${0%/*}/conf" ] && . "${0%/*}/conf"
 
 # need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # the path with libraries should already exist
 if [ ! -d "$LIBS_PATH" ]; then
-	printf "ERROR: Lib path '%s' not found.\n" "$LIBS_PATH"
+	printf 'ERROR: Lib path "%s" not found.\n' "$LIBS_PATH"
 	exit 1
 fi
 [ -d "$LIBS_PATH/arduino-core" ] || mkdir "$LIBS_PATH/arduino-core"
@@ -33,8 +33,8 @@ ARDUINO_PACK="arduino-${VERSION}-linux64.tar.xz"
 ARDUINO_DIR="arduino-${VERSION}"
 ARDUINO_CORE_PATH="$LIBS_PATH/arduino-core/${VERSION}"
 
-if printf "%s" "$VERSION" | grep -q '[0-9]' && [ -d "$ARDUINO_CORE_PATH" ]; then
-	printf "Arduino core '%s' already exists, nothing to do.\n\n" "$ARDUINO_CORE_PATH"
+if printf '%s' "$VERSION" | grep -q '[0-9]' && [ -d "$ARDUINO_CORE_PATH" ]; then
+	printf 'Arduino core "%s" already exists, nothing to do.\n\n' "$ARDUINO_CORE_PATH"
 	exit
 fi
 
@@ -43,42 +43,42 @@ cd /tmp
 if [ ! -f "/tmp/$ARDUINO_PACK" ]; then
 	wget -4 -r -nd -nc --progress=dot:giga https://downloads.arduino.cc/$ARDUINO_PACK
 	if [ ! -s "$ARDUINO_PACK" ]; then
-		printf "ERROR: Download failed. Please download Arduino from\n%s into /tmp\n\n" "$OFFICIAL_WEBSITE"
+		printf 'ERROR: Download failed. Please download Arduino from\n%s into /tmp\n\n' "$OFFICIAL_WEBSITE"
 		exit 1
 	fi
 fi
 
 # unpack
-printf "\nUnpacking %s ... " "$ARDUINO_PACK"
+printf '\nUnpacking %s ... ' "$ARDUINO_PACK"
 tar xf $ARDUINO_PACK >/dev/null 2>/dev/null
 if [ ! -d $ARDUINO_DIR ]; then
-	printf "Unpacking /tmp/%s failed.\n" "ARDUINO_PACK"
+	printf 'Unpacking /tmp/%s failed.\n' "ARDUINO_PACK"
 	rm -f $ARDUINO_PACK
 	exit 1
 fi
 rm -f $ARDUINO_PACK
-printf "done\n"
+printf 'done\n'
 
 # clean up the unpacked data, leave only the core
-printf "Cleaning up the core ... "
+printf 'Cleaning up the core ... '
 cd "$ARDUINO_DIR" || exit 1
 rm -rf examples dist java reference tools tools-builder
 rm -rf hardware/tools lib/theme lib/icons
 rm -f lib/*so lib/*jar lib/*ico lib/*png lib/*bmp
 rm -f arduino* *install.sh
-printf "done\n"
+printf 'done\n'
 
 # move the clean core to destination $LIBS_PATH
 rm -rf "$ARDUINO_CORE_PATH"
 cd ..
 mv -f $ARDUINO_DIR $ARDUINO_CORE_PATH 2>/dev/null
-printf "\nThe Arduino core libraries are in '%s'.\n" "$ARDUINO_CORE_PATH"
-printf "Enter the full path to this directory as ARDUINO_DIR parameter in your Makefile.\n"
+printf '\nThe Arduino core libraries are in "%s".\n' "$ARDUINO_CORE_PATH"
+printf 'Enter the full path to this directory as ARDUINO_DIR parameter in your Makefile.\n'
 [ -f /usr/share/arduino/Arduino.mk ] && \
-  printf "See /usr/share/arduino/Arduino.mk for details.\n"
+  printf 'See /usr/share/arduino/Arduino.mk for details.\n'
 [ -d /usr/share/doc/arduino-mk/examples ] && \
-  printf "See /usr/share/doc/arduino-mk/examples/ for usage examples.\n"
-printf "The latest arduino-mk version is available at:\nhttps://github.com/sudar/Arduino-Makefile\n\n"
-printf "You can support Arduino by donating on the official website:\n%s\n" "$OFFICIAL_WEBSITE"
-printf "\nDONE\n\n" 
+  printf 'See /usr/share/doc/arduino-mk/examples/ for usage examples.\n'
+printf 'The latest arduino-mk version is available at:\nhttps://github.com/sudar/Arduino-Makefile\n\n'
+printf 'You can support Arduino by donating on the official website:\n%s\n' "$OFFICIAL_WEBSITE"
+printf '\nDONE\n\n'
 

@@ -4,37 +4,37 @@
 #
 
 # Make sure that I'm root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root to cleanup obsolete kernel data!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # list files and directories
 KERNELS="$(ls -1 /boot/vmlinuz-* | sed 's/.*vmlinuz-//')"
 
 # filter obsolete sources
-SOURCES="$(find /usr/src -mindepth 1 -maxdepth 1 -type d -iname 'linux-*' -printf "%f\n" | grep -o '[0-9].*')"
-KERNELS_SHORT="$(printf "%s\n%s" "$KERNELS" | sed 's/\.0$//')"
-OBSOLETE="$(printf "%s\n%s" "$KERNELS_SHORT" "$SOURCES" | sort | uniq -u)"
+SOURCES="$(find /usr/src -mindepth 1 -maxdepth 1 -type d -iname 'linux-*' -printf '%f\n' | grep -o '[0-9].*')"
+KERNELS_SHORT="$(printf '%s\n%s' "$KERNELS" | sed 's/\.0$//')"
+OBSOLETE="$(printf '%s\n%s' "$KERNELS_SHORT" "$SOURCES" | sort | uniq -u)"
 for over in $OBSOLETE; do
-	printf "Delete sources directory: /usr/src/linux-%s ..." "$over"
+	printf 'Delete sources directory: /usr/src/linux-%s ...' "$over"
 	rm -rf "/usr/src/linux-$over"
-	printf "OK\n"
+	printf 'OK\n'
 done
 
 # filter obsolete modules
-MODULES="$(find /lib/modules -mindepth 1 -maxdepth 1 -type d -printf "%f\n")"
-OBSOLETE="$(printf "%s\n%s" "$KERNELS" "$MODULES" | sort | uniq -u)"
+MODULES="$(find /lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n')"
+OBSOLETE="$(printf '%s\n%s' "$KERNELS" "$MODULES" | sort | uniq -u)"
 for over in $OBSOLETE; do
-	printf "Delete modules directory: /lib/modules/%s ..." "$over"
+	printf 'Delete modules directory: /lib/modules/%s ...' "$over"
 	rm -rf "/lib/modules/$over"
-	printf "OK\n"
+	printf 'OK\n'
 done
 
 # filter obsolete initramfs entries
 if [ -d /var/lib/initramfs-tools ]; then
-	INITS="$(find /var/lib/initramfs-tools -mindepth 1 -maxdepth 1 -type f -printf "%f\n" 2>/dev/null)"
-	OBSOLETE="$(printf "%s\n%s" "$KERNELS" "$INITS" | sort | uniq -u)"
+	INITS="$(find /var/lib/initramfs-tools -mindepth 1 -maxdepth 1 -type f -printf '%f\n' 2>/dev/null)"
+	OBSOLETE="$(printf '%s\n%s' "$KERNELS" "$INITS" | sort | uniq -u)"
 	for over in $OBSOLETE; do
-		printf "Delete initramfs file: /var/lib/initramfs-tools/%s ..." "$over"
-		rm -f "/var/lib/initramfs-tools/$over"
-		printf "OK\n"
+		printf 'Delete initramfs file: /var/lib/initramfs-tools/%s ...' "$over"
+		rm -f '/var/lib/initramfs-tools/$over'
+		printf 'OK\n'
 	done
 fi

@@ -4,45 +4,45 @@
 #
 # (cloux@rote.ch)
 
-printf "Adobe Flash Player Installer\nInstalled version: "
+printf 'Adobe Flash Player Installer\nInstalled version: '
 if [ -r /usr/lib/flashplugin-nonfree/libflashplayer.so ]; then
 	INSTALLED=$(strings /usr/lib/flashplugin-nonfree/libflashplayer.so | grep LNX | cut -d ' ' -f 2 | sed -e 's/,/./g')
-	printf "%s" "$INSTALLED"
+	printf '%s' "$INSTALLED"
 fi
-printf "\n"
+printf '\n'
 
-printf " Upstream version: "
+printf ' Upstream version: '
 UPSTREAM=$(wget -q -O - http://get.adobe.com/flashplayer/about/ 2>/dev/null | tr -d ' \n' | grep -o 'Linux.*</table>' | grep -o 'Firefox.*' | grep -o '[0-9.]*' | head -n 1)
 if [ "$UPSTREAM" = "" ]; then
-	printf "unknown\n"
+	printf 'unknown\n'
 	exit 1
 fi
-printf "%s\n" "$UPSTREAM"
+printf '%s\n' "$UPSTREAM"
 
 if [ "$INSTALLED" = "$UPSTREAM" ]; then
-	printf "You are up to date.\n"
+	printf 'You are up to date.\n'
 	exit
 fi
 
 # We need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 mkdir /tmp/flashplayer 2>/dev/null
 cd /tmp/flashplayer
-printf "Downloading Flash Player %s ...\n" "$UPSTREAM"
+printf 'Downloading Flash Player %s ...\n' "$UPSTREAM"
 wget -4 --progress=dot:giga https://fpdownload.adobe.com/get/flashplayer/pdc/$UPSTREAM/flash_player_npapi_linux.x86_64.tar.gz
 if [ $? -ne 0 ]; then
-	printf "Error: Flash Player v%s download failed.\n" "$UPSTREAM"
+	printf 'Error: Flash Player v%s download failed.\n' "$UPSTREAM"
 	exit 1
 fi
 
 tar xzf flash_player_npapi_linux.x86_64.tar.gz
 if [ $? -ne 0 ]; then
-	printf "Error: Flash Player unpacking failed.\n"
+	printf 'Error: Flash Player unpacking failed.\n'
 	exit 1
 fi
 if [ ! -r libflashplayer.so ]; then
-	printf "Error: file /tmp/flashplayer/libflashplayer.so not found.\n"
+	printf 'Error: file /tmp/flashplayer/libflashplayer.so not found.\n'
 	exit 1
 fi
 
@@ -66,8 +66,8 @@ if [ $? -ne 0 ]; then
 fi
 update-alternatives --display flash-mozilla.so
 if [ $? -ne 0 ]; then
-	printf "ERROR: non-free Adobe Flash player cannot be set as an alternative to mozilla-player!\n"
+	printf 'ERROR: non-free Adobe Flash player cannot be set as an alternative to mozilla-player!\n'
 	exit 1
 fi
 
-printf "DONE, Flash Player updated to %s\n" "$UPSTREAM"
+printf 'DONE, Flash Player updated to %s\n' "$UPSTREAM"

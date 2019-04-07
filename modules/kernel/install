@@ -58,11 +58,7 @@ for PARAM in "$@"; do
 done
 
 # We need to be root to install new kernel
-if [ -z "$CHECK" ] && [ $(id -u) -ne 0 ]; then
-	printf "Need to be root to install new kernel!\n" 1>&2
-	exit 1
-fi
-
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 #
 # check and try to install dependencies
 #
@@ -75,30 +71,30 @@ if [ -z "$(command -v wget)" ] || [ -z "$(command -v bc)" ] || \
 	if [ "$APTINST" ]; then
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 update
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install \
-		  wget bc bison flex liblz4-tool libssl-dev libelf-dev
+		  wget bc bison flex libssl-dev libelf-dev lz4
 	fi
 fi
 for DEP in wget bc bison flex lz4c; do
 	if [ -z "$(command -v $DEP)" ]; then
-		printf "ERROR: Please install '%s' to continue.\n" "$DEP"
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
 		exit 1
 	fi
 done
 
 # PATH needs /usr/sbin for update-grub to work
-printf "$PATH" | grep -q '/usr/sbin' || export PATH=$PATH:/usr/sbin
+printf '%s' "$PATH" | grep -q '/usr/sbin' || export PATH=$PATH:/usr/sbin
 
 #
 # Get information about the latest kernel on kernel.org
 #
-printf "Searching for kernel update ...\n"
+printf 'Searching for kernel update ...\n'
 # JSON file with current kernel information.
 RELEASES_LINK=https://www.kernel.org/releases.json
 cd /tmp || exit 1
 wget -q -N -4 "$RELEASES_LINK"
-RELEASES_FILE=$(printf "%s" "$RELEASES_LINK" | grep -Po '(?<=/)[^"/]+$')
+RELEASES_FILE=$(printf '%s' "$RELEASES_LINK" | grep -Po '(?<=/)[^"/]+$')
 if [ ! -e "$RELEASES_FILE" ]; then
-	printf "ERROR: Link %s not available!\n" "$RELEASES_LINK"
+	printf 'ERROR: Link %s not available!\n' "$RELEASES_LINK"
 	exit 1
 fi
 if [ "$MONIKER" = "stable" ]; then
@@ -110,22 +106,22 @@ fi
 # remove temporary JSON kernel info file
 rm "$RELEASES_FILE"
 if [ -z "$JSON" ]; then
-	echo "ERROR: JSON moniker section for '$MONIKER' not found."
+	printf 'ERROR: JSON moniker section for "%s" not found.\n' "$MONIKER"
 	exit 1
 fi
-KERNEL_DATE=$(printf "%s" "$JSON" | grep -Po 'isodate[^,}]+' | grep -Po '\d[^"]+')
-KERNEL_LINK=$(printf "%s" "$JSON" | grep -Po 'source[^,}]+' | grep -Po '[^"]+/[^"]+')
-KERNEL_FILE=$(printf "%s" "$KERNEL_LINK" | grep -Po '[^/]+$')
+KERNEL_DATE=$(printf '%s' "$JSON" | grep -Po 'isodate[^,}]+' | grep -Po '\d[^"]+')
+KERNEL_LINK=$(printf '%s' "$JSON" | grep -Po 'source[^,}]+' | grep -Po '[^"]+/[^"]+')
+KERNEL_FILE=$(printf '%s' "$KERNEL_LINK" | grep -Po '[^/]+$')
 # Work around weird version numbering differences:
 # The numbering scheme in the JSON might differ from vmlinuz-XY kernel
 # file name when 0's are involved, like "4.0.0", but "4.0-rc1" :/
-KERNEL_VERSION=$(printf "%s" "$JSON" | grep -Po 'version[^,}]+' | grep -Po '\d[^"}]+' | sed 's/-/.0-/')
-[ $(printf "%s" "$KERNEL_VERSION" | grep -o '\.' | wc -l) -eq 1 ] && KERNEL_VERSION=$KERNEL_VERSION.0
-KERNEL_VERSION=$(printf "%s" "$KERNEL_VERSION" | sed 's/\.0\.0-/.0-/')
+KERNEL_VERSION=$(printf '%s' "$JSON" | grep -Po 'version[^,}]+' | grep -Po '\d[^"}]+' | sed 's/-/.0-/')
+[ $(printf '%s' "$KERNEL_VERSION" | grep -o '\.' | wc -l) -eq 1 ] && KERNEL_VERSION=$KERNEL_VERSION.0
+KERNEL_VERSION=$(printf '%s' "$KERNEL_VERSION" | sed 's/\.0\.0-/.0-/')
 
-printf "Latest %s version: %s (%s)\n" "$MONIKER" "$KERNEL_VERSION" "$KERNEL_DATE"
+printf 'Latest %s version: %s (%s)\n' "$MONIKER" "$KERNEL_VERSION" "$KERNEL_DATE"
 if [ -e "/boot/vmlinuz-$KERNEL_VERSION" ]; then
-	printf "We already have that one.\n"
+	printf 'We already have that one.\n'
 	exit
 fi
 
@@ -133,7 +129,7 @@ fi
 # If checking, notify the user and exit
 #
 if [ "$CHECK" ]; then
-	printf "This is a new kernel, you may update.\n"
+	printf 'This is a new kernel, you may update.\n'
 	# show notification balloon in GUI environment
 	if [ "$(command -v notify-send)" ]; then
 		export DISPLAY=$(who | grep $(id -un) | grep -o '[(].*[)]$' | grep -o '[^()]*')
@@ -148,17 +144,17 @@ fi
 # Start Kernel Update
 #
 exec 2>&1
-printf "===================\n%s\n===================\n" "$(date '+%Y-%m-%d %H:%M:%S')"
+printf '===================\n%s\n===================\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 
 #
 # Download
 #
 cd /usr/src || exit 1
 if [ ! -e "$KERNEL_FILE" ]; then
-	printf "\nDownloading ...\n"
+	printf '\nDownloading ...\n'
 	wget -4 --progress=dot:giga "$KERNEL_LINK"
 	if [ $? -ne 0 ]; then
-		printf "ERROR: kernel download failed.\n"
+		printf 'ERROR: kernel download failed.\n'
 		exit 1
 	fi
 fi
@@ -169,27 +165,27 @@ fi
 FREE_MB=$(df --block-size=M --output=avail /usr/src | grep -o '[0-9]*')
 # rough estimate how much do we need
 KERNEL_SIZE_MB=$(du --block-size=M "$KERNEL_FILE" | grep -o '^[0-9]*')
-NEEDED_MB=$(printf "22 * %s\n" "$KERNEL_SIZE_MB" | bc)
+NEEDED_MB=$(printf '22 * %s\n' "$KERNEL_SIZE_MB" | bc)
 if [ $NEEDED_MB -gt $FREE_MB ]; then
-	printf "ERROR: not enough free space in /usr/src\n"
-	printf "You should have at least %s GB free to continue.\n" "$(printf "scale=1; %s/1000\n" "$NEEDED_MB" | bc)"
+	printf 'ERROR: not enough free space in /usr/src\n'
+	printf 'You should have at least %s GB free to continue.\n' "$(printf 'scale=1; %s/1000\n' "$NEEDED_MB" | bc)"
 	exit 1
 fi
 
 #
 # Unpack
 #
-printf "Unpacking ...\n"
+printf 'Unpacking ...\n'
 tar xJf "$KERNEL_FILE"
 if [ $? -ne 0 ]; then
-	printf "ERROR: Unpacking /usr/src/%s Failed!\n" "$KERNEL_FILE"
+	printf 'ERROR: Unpacking /usr/src/%s Failed!\n' "$KERNEL_FILE"
 	exit 1
 fi
 rm -f "$KERNEL_FILE"
 
-KERNEL_DIR=$(printf "%s" "$KERNEL_FILE" | grep -Po '.*(?=.tar)')
+KERNEL_DIR=$(printf '%s' "$KERNEL_FILE" | grep -Po '.*(?=.tar)')
 if [ ! -d "$KERNEL_DIR" ]; then
-	printf "ERROR: Kernel path /usr/src/%s not found!\n" "$KERNEL_DIR"
+	printf 'ERROR: Kernel path /usr/src/%s not found!\n' "$KERNEL_DIR"
 	exit 1
 fi
 cd "$KERNEL_DIR"
@@ -197,24 +193,24 @@ cd "$KERNEL_DIR"
 #
 # Configure (see CONFIGTYPE variable)
 #
-printf "\nConfigure "
+printf '\nConfigure '
 # clean up logfile variable
 LOGFILE=${LOGFILE##*/}
 [ "$LOGFILE" ] || LOGFILE=compile.log
 if [ "$CONFIGTYPE" = "ask" ]; then
 	# use same configuration as previous kernel, ask user for new symbols
-	printf "'%s' ...\n" "$CONFIGTYPE"
+	printf '"%s" ...\n' "$CONFIGTYPE"
 	make oldconfig
 elif [ "$CONFIGTYPE" = "menu" ]; then
 	# same as "old", then run ncurses configuration tool for additional changes
 	# WARNING: do NOT use this from Simple Installer (https://github.com/cloux/sin)
-	printf "'%s' ...\n" "$CONFIGTYPE"
+	printf '"%s" ...\n' "$CONFIGTYPE"
 	make oldconfig; sleep 2
 	make menuconfig
 else
 	# by default, run automatic unattended update: use previous kernel config, 
 	# and apply default values for new symbols
-	printf "'unattended' ...\n"
+	printf '"unattended" ...\n'
 	make olddefconfig
 fi
 
@@ -228,34 +224,34 @@ fi
 #
 # Compile
 #
-printf "Logfile: %s\n" "/usr/src/$KERNEL_DIR/$LOGFILE"
-printf "Compile using %s threads ..." "$JOBS"
+printf 'Logfile: %s\n' "/usr/src/$KERNEL_DIR/$LOGFILE"
+printf 'Compile using %s threads ...' "$JOBS"
 START=$(date +%s.%N)
 nice -n 1 make -j $JOBS >"/usr/src/$KERNEL_DIR/$LOGFILE" 2>&1
 END=$(date +%s.%N)
-printf "DONE\n"
+printf 'DONE\n'
 
 #
 # Install
 #
 if [ -s vmlinux ]; then
-	printf "\nInstall modules ..."
+	printf '\nInstall modules ...'
 	make modules_install >>"/usr/src/$KERNEL_DIR/$LOGFILE"
-	printf "DONE\n"
+	printf 'DONE\n'
 
 	# Do not generate initrd if the feature is disabled in the kernel.
 	# See /etc/kernel/postinst.d/initramfs-tools hook script
 	(grep -iq 'BLK_DEV_INITRD *= *y' .config) || export INITRD=No
 
-	printf "\nInstall kernel ...\n"
+	printf '\nInstall kernel ...\n'
 	make install
 
-	printf "\nCompilation FINISHED after [s.ms]: "
+	printf '\nCompilation FINISHED after [s.ms]: '
 else
 	tail -n 15 "/usr/src/$KERNEL_DIR/$LOGFILE"
-	printf "\nCompilation FAILED after [s.ms]: "
+	printf '\nCompilation FAILED after [s.ms]: '
 fi
-printf "scale=3; (%s - %s)/1\n" "$END" "$START" | bc
+printf 'scale=3; (%s - %s)/1\n' "$END" "$START" | bc
 
 [ -e "/boot/vmlinuz-$KERNEL_VERSION" ] || exit 1
 
@@ -265,32 +261,32 @@ printf "scale=3; (%s - %s)/1\n" "$END" "$START" | bc
 OLD_KERNELS=""
 CUR_KERNEL=$(uname -r)
 if [ "$CLEANUP" = "y" ] && [ -f "/boot/vmlinuz-$CUR_KERNEL" ]; then
-	printf "\nKernel cleanup ...\n"
-	printf "Current active kernel: %s\n" "$CUR_KERNEL"
-	printf "   New updated kernel: %s\n" "$KERNEL_VERSION"
+	printf '\nKernel cleanup ...\n'
+	printf 'Current active kernel: %s\n' "$CUR_KERNEL"
+	printf '   New updated kernel: %s\n' "$KERNEL_VERSION"
 	OLD_KERNELS=$(find /boot -maxdepth 1 -type f -name "vmlinuz*" ! -name "*$CUR_KERNEL" ! -name "*$KERNEL_VERSION" ! -name "*memtest*" -printf '%f ')
-	OLD_KERNELS=$(printf "%s" "$OLD_KERNELS" | sed 's/vmlinuz-//g')
-	printf "     Obsolete kernels: "
+	OLD_KERNELS=$(printf '%s' "$OLD_KERNELS" | sed 's/vmlinuz-//g')
+	printf '     Obsolete kernels: '
 	if [ "$OLD_KERNELS" ]; then
-		printf "%s\n" "$OLD_KERNELS"
-		printf "Deleting obsolete kernels ..."
+		printf '%s\n' "$OLD_KERNELS"
+		printf 'Deleting obsolete kernels ...'
 		find /boot -maxdepth 1 -type f ! -name "*$CUR_KERNEL" ! -name "*$KERNEL_VERSION" ! -name "*memtest*" -delete
-		printf "OK\nDeleting obsolete modules in /lib/modules ..."
+		printf 'OK\nDeleting obsolete modules in /lib/modules ...'
 		for OLD_KERNEL in $OLD_KERNELS; do
 			[ -d "/lib/modules/$OLD_KERNEL" ] && rm -rf "/lib/modules/$OLD_KERNEL"
 		done
-		printf "OK\nDeleting obsolete sources in /usr/src ..."
+		printf 'OK\nDeleting obsolete sources in /usr/src ...'
 		for OLD_KERNEL in $OLD_KERNELS; do
-			KERNELSRC_DIR=$(printf "%s" "$OLD_KERNEL" | sed 's/\.0$//')
+			KERNELSRC_DIR=$(printf '%s' "$OLD_KERNEL" | sed 's/\.0$//')
 			[ -d "/usr/src/linux-$KERNELSRC_DIR" ] && rm -rf "/usr/src/linux-$KERNELSRC_DIR"
 		done
-		printf "OK\n"
+		printf 'OK\n'
 		/usr/sbin/update-grub
 	else
-		printf "none\n"
+		printf 'none\n'
 	fi
 elif [ "$CLEANUP" = "y" ]; then
-	printf "WARNING: unable to determine current kernel, skipping /boot cleanup.\n"
+	printf 'WARNING: unable to determine current kernel, skipping /boot cleanup.\n'
 fi
 
 #
@@ -300,7 +296,7 @@ fi
 FREE_SPACE_MB=$(df --block-size=M --output=avail /usr/src | grep -o '[0-9]*')
 KERNEL_SRC_MB=$(du --summarize --block-size=M . | grep -o '^[0-9]*')
 if [ $KERNEL_SRC_MB -gt $FREE_SPACE_MB ]; then
-	printf "\nFree space left is only %s MB, Cleanup ...\n" "$FREE_SPACE_MB"
+	printf '\nFree space left is only %s MB, Cleanup ...\n' "$FREE_SPACE_MB"
 	make clean
 	# keep only "include", "arch" and "scripts"
 	find . -mindepth 1 -maxdepth 1 -type d ! -iname 'arch' ! -iname 'include' ! -iname 'scripts' -exec rm -rf '{}' \;
@@ -314,13 +310,13 @@ fi
 # the /boot path can be shared with other systems that need the same kernel, see 'kernel-pull-binary.sh'
 if [ "$SHARE" = "y" ] && [ -d "/lib/modules/$KERNEL_VERSION" ]; then
 	cd /lib/modules
-	printf "\nPack modules into /boot for sharing ..."
+	printf '\nPack modules into /boot for sharing ...'
 	tar czf "/boot/modules-$KERNEL_VERSION.tgz" "$KERNEL_VERSION"
-	printf "OK\n"
+	printf 'OK\n'
 	# mark the latest available version into /boot/latest
-	printf "%s" "$KERNEL_VERSION" > /boot/latest
+	printf '%s' "$KERNEL_VERSION" > /boot/latest
 fi
 
-printf "\nDONE\n"
+printf '\nDONE\n'
 
 exit

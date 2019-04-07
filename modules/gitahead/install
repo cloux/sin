@@ -5,29 +5,29 @@
 #
 # (cloux@rote.ch)
 
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 if [ -x /opt/GitAhead/GitAhead ]; then
 	INST_VERSION=$(/opt/GitAhead/GitAhead --version 2>/dev/null | grep -o '[0-9][0-9.]*[0-9]')
-	printf " Instaled version: %s\n" "$INST_VERSION"
+	printf ' Instaled version: %s\n' "$INST_VERSION"
 fi
 
-printf "   Latest version: "
+printf '   Latest version: '
 LATEST_LINK="https://github.com/gitahead/"$(wget -q4 -O - \
 https://github.com/gitahead/gitahead/releases/latest | grep -o 'gitahead/releases/download/[^"]*\.sh')
-LATEST_FILE=$(printf "%s" "$LATEST_LINK" | grep -o '[^/]*$')
+LATEST_FILE=$(printf '%s' "$LATEST_LINK" | grep -o '[^/]*$')
 if [ -z "$LATEST_FILE" ]; then
-	printf "unknown.\n\n"
-	printf "Check manualy at https://github.com/gitahead/gitahead/releases/latest\n\n"
+	printf 'unknown.\n\n'
+	printf 'Check manualy at https://github.com/gitahead/gitahead/releases/latest\n\n'
 	exit 1
 fi
-LATEST_VERSION=$(printf "%s" "$LATEST_FILE" | grep -o '[0-9][0-9.]*[0-9]')
-printf "%s\n" "$LATEST_VERSION"
+LATEST_VERSION=$(printf '%s' "$LATEST_FILE" | grep -o '[0-9][0-9.]*[0-9]')
+printf '%s\n' "$LATEST_VERSION"
 if [ "$INST_VERSION" ] && [ "$LATEST_VERSION" = "$INST_VERSION" ]; then
-	printf "\nGitAhead is up to date.\n\n"
+	printf '\nGitAhead is up to date.\n\n'
 	exit
 fi
-printf "\n"
+printf '\n'
 
 cd /opt
 wget -4 -r -nd -nc --progress=dot:giga $LATEST_LINK || exit 1
@@ -48,4 +48,4 @@ if [ -s /opt/GitAhead/GitAhead ]; then
 	ln -sf /opt/GitAhead/GitAhead /usr/local/bin/
 fi
 
-printf "\nDONE\n"
+printf '\nDONE\n'

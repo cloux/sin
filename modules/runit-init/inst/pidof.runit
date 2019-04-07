@@ -22,8 +22,8 @@ for SRV in $*; do
 	REALPATH="$(readlink -fn "$(command -v "$SRV")")"
 	[ -f "$REALPATH" ] || continue
 	for PID in $(pgrep -f -d ' ' "$REALPATH"); do
-		if printf "%s\n" "$OMIT" | grep -vq " $PID "; then
-			printf "%s\n" "$PID"
+		if printf '%s\n' "$OMIT" | grep -vq " $PID "; then
+			printf '%s\n' "$PID"
 			[ "$SINGLE" ] && exit
 			RET=0
 		fi

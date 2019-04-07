@@ -14,7 +14,7 @@
 exec 2>&1
 
 # We need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # use configuration files to override the defaults above
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
@@ -23,41 +23,41 @@ MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 
 # get the latest kernel version number from one of the domains
 for DOMAIN in $PULL_FROM; do
-	printf "Latest kernel on %s: " "$DOMAIN"
+	printf 'Latest kernel on %s: ' "$DOMAIN"
 	LATEST=$(wget -qO- "https://$DOMAIN/boot/latest" 2>/dev/null)
-	printf "%s\n" "$LATEST"
+	printf '%s\n' "$LATEST"
 	[ "$LATEST" ] && break
 done
 
 if [ -z "$LATEST" ]; then
-	printf "None of the domains share a new kernel.\n"
+	printf 'None of the domains share a new kernel.\n'
 	exit 1
 fi
 
 if [ -e "/boot/vmlinuz-$LATEST" ]; then
-	printf "This kernel is already installed.\n"
+	printf 'This kernel is already installed.\n'
 	exit
 fi
 
-printf "New Kernel %s is available\n" "$LATEST"
+printf 'New Kernel %s is available\n' "$LATEST"
 
 # download the new binary kernel
 cd /boot || exit 1
 KERNEL_FILES="config System.map modules vmlinuz"
 for FILE in $KERNEL_FILES; do
-	printf "Downloading %s ... " "$FILE"
+	printf 'Downloading %s ... ' "$FILE"
 	NEWFILE="${FILE}-$LATEST"
 	[ "$FILE" = "modules" ] && NEWFILE="$NEWFILE.tgz"
 	wget --no-verbose "https://$DOMAIN/boot/$NEWFILE" || exit 1
 done
-printf "Unpack modules into /lib/modules ..."
+printf 'Unpack modules into /lib/modules ...'
 cd /lib/modules || exit 1
 mv -f "/boot/modules-$LATEST.tgz" .
 tar xzf "modules-$LATEST.tgz" || exit 1
 rm -f "modules-$LATEST.tgz"
-printf "OK\n"
+printf 'OK\n'
 
 # apply the new kernel
 [ -x /usr/sbin/update-grub ] && /usr/sbin/update-grub
 
-printf "\nDONE\n"
+printf '\nDONE\n'

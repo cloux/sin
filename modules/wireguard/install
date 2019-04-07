@@ -6,7 +6,7 @@
 # (cloux@rote.ch)
 
 # need to be root
-if [ $(id -u) -ne 0 ]; then printf "Need to be root!\n"; exit 1; fi
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # get the source
 cd /usr/src
@@ -14,7 +14,7 @@ if [ -d WireGuard ]; then
 	cd WireGuard
 	git fetch --all || exit 1
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
-		printf "Up to date, nothing to do.\n"
+		printf 'Up to date, nothing to do.\n'
 		exit
 	fi
 	git pull || exit 1
@@ -33,4 +33,4 @@ fi
 make || exit 1
 make install || exit 1
 
-printf "\nDONE\n"
+printf '\nDONE\n'
