@@ -30,6 +30,8 @@ else
 fi
 
 # compile & install
+export LC_ALL=C
+export LANG=C
 make || exit 1
 make install || exit 1
 
