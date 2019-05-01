@@ -173,7 +173,7 @@ for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim \
   smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
-		printf 'Found $PROCNAME: %s\n' "$SRV"
+		printf 'Found %s: %s\n' "$PROCNAME" "$SRV"
 		ln -sf /etc/sv/$PROCNAME /etc/service/
 	fi
 done
@@ -187,7 +187,7 @@ if [ "$SRV" ]; then
 	printf 'Found cups: %s\n' "$SRV"
 	ln -sf /etc/sv/cups /etc/service/
 fi
-SRV="$(pgrep -ax dbus-daemon)"
+SRV="$(pgrep -ax dbus-daemon | grep system)"
 if [ "$SRV" ]; then
 	printf 'Found dbus: %s\n' "$SRV"
 	ln -sf /etc/sv/dbus /etc/service/
@@ -217,7 +217,7 @@ if [ "$SRV" ]; then
 	printf 'Found pureftpd: %s\n' "$SRV"
 	ln -sf /etc/sv/pureftpd /etc/service/
 fi
-SRV="$(pgrep -ax udevd)"
+SRV="$(pgrep -ax udevd | head -n 1)"
 if [ "$SRV" ]; then
 	if [ -f /etc/init.d/eudev ]; then
 		printf 'Found eudev: %s\n' "$SRV"
