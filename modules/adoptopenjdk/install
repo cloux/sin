@@ -1,0 +1,138 @@
+#!/bin/sh
+#
+# AdoptOpenJDK installer
+#
+# Docs: https://adoptopenjdk.net
+#  API: https://api.adoptopenjdk.net/
+#
+# (cloux@rote.ch)
+##################################################################
+exec 2>&1
+
+# Java Package Parameters
+OS=linux
+ARCH=x64
+# releases | nightly
+RELEASE_TYPE=releases
+# jre | jdk
+BIN_TYPE=jdk
+# Java 8, 9, 10, 11, 12 ...
+VERSION=12
+# JVM variant: openj9 | hotspot
+JVM=openj9
+# Heap: normal | large
+HEAP_SIZE=normal
+
+# use configuration file to override the defaults above
+MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
+[ -r "$MODULE_PATH/conf" ] && . "$MODULE_PATH/conf"
+
+##################################################################
+printf 'AdoptOpenJDK installer - '
+if [ $(id -u) -eq 0 ]; then
+	# root install
+	printf 'SYSTEM (as root)\n'
+	ARCHIVE_DIR=/var/cache/sin
+	TARGET_PATH=/usr/lib/jvm
+	MAN_PATH=/usr/share/man
+else
+	# local install
+	printf 'LOCAL (as %s)\n' "$(id -nu)"
+	ARCHIVE_DIR=~/.cache/sin
+	TARGET_PATH=~/.local/lib/jvm
+	MAN_PATH=~/.local/share/man
+	# add local manpages to ~/.manpath
+	MANPATH_LINE="MANDATORY_MANPATH $MAN_PATH"
+	grep -qF "$MANPATH_LINE" ~/.manpath 2>/dev/null || \
+	  printf '%s\n' "$MANPATH_LINE" >> ~/.manpath
+fi
+
+printf '\nSearching for latest %s%s-%s for %s %s ... ' "$BIN_TYPE" "$VERSION" "$JVM" "$OS" "$ARCH"
+
+API_ASSETS='https://api.adoptopenjdk.net/v2/latestAssets'
+API_ASSETS=$API_ASSETS'/'$RELEASE_TYPE'/openjdk'$VERSION'?os='$OS'&arch='$ARCH'&type='$BIN_TYPE'&heap_size='$HEAP_SIZE'&openjdk_impl='$JVM
+ASSET_JSON="$(wget -qN4 -O - "$API_ASSETS")"
+[ $? -eq 0 ] || exit 1
+
+# parse single JSON element
+SEMVER=$(printf '%s' "$ASSET_JSON" | grep -o 'semver"[^,]*' | grep -o '[^"]*"[^"]*$' | grep -o '^[^"]*')
+if [ -z "$SEMVER" ]; then
+	printf 'error, invalid reply:\n%s\n' "$ASSET_JSON"
+	exit 1
+fi
+BIN_SIZE=$(printf '%s' "$ASSET_JSON" | grep -o 'binary_size"[^,]*' | grep -o '[0-9]*')
+printf 'found: v%s (%s MB)\n\n' "$SEMVER" "$((BIN_SIZE/1024/1024))"
+
+# parse download link
+BIN_LINK=$(printf '%s' "$ASSET_JSON" | grep -o 'binary_link"[^,]*' | grep -o '[^"]*"[^"]*$' | grep -o '^[^"]*')
+if [ -z "$BIN_LINK" ]; then
+	printf 'Error: invalid link in reply.\n'
+	exit 1
+fi
+BIN_FILE=$(printf '%s' "$BIN_LINK" | grep -o '[^/]*$')
+
+# check if the file is in cache, re-download the file if it's broken
+[ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
+cd $ARCHIVE_DIR || exit 1
+if [ -f "$BIN_FILE" ] && [ "$BIN_SIZE" -eq "$(stat -c '%s' "$BIN_FILE")" ]; then
+	printf 'Package already available: %s/%s\n' "$ARCHIVE_DIR" "$BIN_FILE"
+	gzip --test "$BIN_FILE" || rm -f "$BIN_FILE"
+fi
+if [ ! -f "$BIN_FILE" ]; then
+	printf 'Downloading into %s ...\n\n' "$ARCHIVE_DIR"
+	wget -4 --progress=dot:giga "$BIN_LINK" || exit 1
+fi
+[ -s "$BIN_FILE" ] || exit 1
+
+# delete old distributions from cache
+find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname '*'${BIN_TYPE}_${ARCH}_${OS}_${JVM}'*' \
+ ! -iname "$BIN_FILE" -delete
+
+# unpack
+printf 'Unpacking %s ... ' "$BIN_FILE"
+tar xzf "$BIN_FILE"
+if [ $? -ne 0 ]; then
+	printf 'ERROR\n'
+	exit 1
+fi
+printf 'OK\n'
+ADOPT_DIR=$(find -maxdepth 1 -type d -iname $BIN_TYPE'*' -printf '%f' -quit)
+
+# check if already installed
+if [ -d "$TARGET_PATH/$ADOPT_DIR" ]; then
+	printf '\n%s is already installed in %s.\n' "$ADOPT_DIR" "$TARGET_PATH"
+	rm -rf "$ADOPT_DIR"
+	exit
+fi
+
+# install
+printf 'Installing into %s ...\n' "$TARGET_PATH/$ADOPT_DIR"
+[ -d "$TARGET_PATH" ] || mkdir -p "$TARGET_PATH"
+mv -t "$TARGET_PATH" "$ADOPT_DIR"
+cd "$TARGET_PATH"/"$ADOPT_DIR" || exit 1
+ln -sf -t "$TARGET_PATH/latest" "$TARGET_PATH/$ADOPT_DIR"
+
+# install manpages
+printf 'Installing manpages ... '
+find man -type f ! -iname '*.gz' -exec gzip '{}' \;
+[ -d "$MAN_PATH"/man1 ] || mkdir -p "$MAN_PATH"/man1
+# NOTE: this ignores the update-alternatives system! 
+ln -sf -t "$MAN_PATH"/man1 "$TARGET_PATH"/latest/man/man1/*.gz
+printf 'OK\n'
+
+# update-alternatives for system installation
+if [ $(id -u) -eq 0 ]; then
+	if [ "$(command -v update-alternatives)" ]; then
+		printf 'Updating alternatives ...\n'
+		for f in $(find "$TARGET_PATH/$ADOPT_DIR/bin" -type f -printf '%f '); do
+			update-alternatives --install /usr/bin/$f $f "$TARGET_PATH/$ADOPT_DIR/bin/$f" 400
+			update-alternatives --set $f "$TARGET_PATH/$ADOPT_DIR/bin/$f"
+		done
+	else
+		printf '\nAdd "%s" into your PATH.\n\n' "$TARGET_PATH/latest/bin"
+	fi
+else
+	printf '\nAdd "%s" into your PATH.\n\n' "$TARGET_PATH/latest/bin"
+fi
+
+printf '\nInstallation complete.\n\n'

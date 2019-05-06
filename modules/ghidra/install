@@ -19,7 +19,7 @@ cd $ARCHIVE_DIR || exit 1
 
 # find latest version
 printf 'Searching for Ghidra installer ... '
-DOWNLOAD_LINK=$(wget -q "$DOWNLOAD_PAGE" -O - 2>/dev/null | grep -o '[^"]*ghidra_[^"]*\.zip')
+DOWNLOAD_LINK=$(wget -q "$DOWNLOAD_PAGE" -O - 2>/dev/null | grep -o '[^"]*ghidra_[^"]*\.zip' | head -n 1)
 if [ -z "$DOWNLOAD_LINK" ]; then
 	printf 'FAILED\n'
 	exit 1
