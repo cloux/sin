@@ -71,7 +71,7 @@ if [ -z "$BIN_LINK" ]; then
 fi
 BIN_FILE=$(printf '%s' "$BIN_LINK" | grep -o '[^/]*$')
 
-# check if the file is in cache, re-download the file if it's broken
+# download the file if necessary
 [ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
 cd $ARCHIVE_DIR || exit 1
 if [ -f "$BIN_FILE" ] && [ "$BIN_SIZE" -eq "$(stat -c '%s' "$BIN_FILE")" ]; then
@@ -96,7 +96,7 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 printf 'OK\n'
-ADOPT_DIR=$(find -maxdepth 1 -type d -iname $BIN_TYPE'*' -printf '%f' -quit)
+ADOPT_DIR=$(find -maxdepth 1 -type d -iname '*'$BIN_TYPE'*' -printf '%f' -quit)
 
 # check if already installed
 if [ -d "$TARGET_PATH/$ADOPT_DIR" ]; then
@@ -110,7 +110,7 @@ printf 'Installing into %s ...\n' "$TARGET_PATH/$ADOPT_DIR"
 [ -d "$TARGET_PATH" ] || mkdir -p "$TARGET_PATH"
 mv -t "$TARGET_PATH" "$ADOPT_DIR"
 cd "$TARGET_PATH"/"$ADOPT_DIR" || exit 1
-ln -sf -t "$TARGET_PATH/latest" "$TARGET_PATH/$ADOPT_DIR"
+ln -sf "$ADOPT_DIR" "$TARGET_PATH/latest"
 
 # install manpages
 printf 'Installing manpages ... '
@@ -135,4 +135,4 @@ else
 	printf '\nAdd "%s" into your PATH.\n\n' "$TARGET_PATH/latest/bin"
 fi
 
-printf '\nInstallation complete.\n\n'
+printf 'Installation complete.\n\n'
