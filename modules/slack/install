@@ -16,7 +16,7 @@ ARCHIVE_DIR=/var/cache/sin
 cd $ARCHIVE_DIR || exit 1
 
 printf 'Searching for Slack DEB installer ... '
-SLACK_INSTALLER=$(curl "$SLACK_DOWNLOAD_PAGE" 2>/dev/null | grep -o 'http[^"]*amd64\.deb')
+SLACK_INSTALLER=$(wget -q4 -O - "$SLACK_DOWNLOAD_PAGE" 2>/dev/null | grep -o 'http[^"]*amd64\.deb')
 if [ -z "$SLACK_INSTALLER" ]; then
 	printf 'FAILED\n'
 	exit 1

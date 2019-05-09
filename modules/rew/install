@@ -14,7 +14,7 @@ if [ -z "$DESKTOP_SESSION" ] && [ -z "$GDMSESSION" ]; then
 fi
 
 printf 'Searching for REW installer ... '
-INSTALLER_SH="$DOWNLOAD_PAGE/"$(curl "$DOWNLOAD_PAGE" 2>/dev/null | grep -oi '[^"]*REW_linux_[^"]*')
+INSTALLER_SH="$DOWNLOAD_PAGE/"$(wget -q4 -O - "$DOWNLOAD_PAGE" 2>/dev/null | grep -oi '[^"]*REW_linux_[^"]*')
 SH_FILE=$(printf '%s' "$INSTALLER_SH" | grep -o '[^/]*$')
 if [ -z "$SH_FILE" ]; then
 	printf 'not found.\n'

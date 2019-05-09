@@ -39,7 +39,7 @@ if [ "$APTINST" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; the
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update
 	printf 'Install dependencies ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install \
-	  libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
+	  build-essential libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
 	printf 'Remove conflicting packages ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 remove \
 	  runit runit-init getty-run
