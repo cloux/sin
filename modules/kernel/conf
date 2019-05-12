@@ -23,8 +23,8 @@ JOBS=
 LOGFILE=compile.log
 
 # Delete obsolete kernels, keep only the currently used and the new one.
-# Useful especially for automated updates to prevent cluttering the machine
-# with a lot of unused kernel versions.
+# Remove kernel sources, keep only headers required to compile kernel modules.
+# This makes kernel headers available for sharing.
 CLEANUP=y
 
 # Pack all kernel modules into a tgz archive in /boot for sharing.

@@ -31,7 +31,9 @@ JOBS=
 # Compilation log will go into: /usr/src/kernel-VERSION/$LOGFILE
 LOGFILE=compile.log
 
-# Delete obsolete kernels, keep only the currently used and the new one
+# Delete obsolete kernels, keep only the currently used and the new one.
+# Remove kernel sources, keep only headers required to compile kernel modules.
+# This makes kernel headers available for sharing.
 #CLEANUP=y
 CLEANUP=
 
@@ -289,29 +291,47 @@ elif [ "$CLEANUP" = "y" ]; then
 fi
 
 #
-# Clean up /usr/src
+# Clean up source, keep only headers (see CLEANUP variable).
+# Force this if the free space left is less than the size of this kernel.
 #
-# force cleanup if the free space left is less than the size of this kernel
+cd "/usr/src/$KERNEL_DIR"
 FREE_SPACE_MB=$(df --block-size=M --output=avail /usr/src | grep -o '[0-9]*')
 KERNEL_SRC_MB=$(du --summarize --block-size=M . | grep -o '^[0-9]*')
-if [ $KERNEL_SRC_MB -gt $FREE_SPACE_MB ]; then
-	printf '\nFree space left is only %s MB, Cleanup ...\n' "$FREE_SPACE_MB"
-	make clean
-	# keep only "include", "arch" and "scripts"
-	find . -mindepth 1 -maxdepth 1 -type d ! -iname 'arch' ! -iname 'include' ! -iname 'scripts' -exec rm -rf '{}' \;
-	# in arch, keep only "x86" and "x86_64"
-	find ./arch -mindepth 1 -maxdepth 1 -type d ! -iname 'x86*' -exec rm -rf '{}' \; 2>/dev/null
+[ $KERNEL_SRC_MB -gt $FREE_SPACE_MB ] && \
+  printf 'WARNING: Low on disk space: %s MB\n' "$FREE_SPACE_MB"
+if [ "$CLEANUP" = "y" ] || [ $KERNEL_SRC_MB -gt $FREE_SPACE_MB ]; then
+	printf 'Deleting sources, keep headers ...\n'
+	cp -f -t /tmp .config Module.symvers
+	make distclean
+	mv -f /tmp/.config .
+	make modules_prepare >>"/usr/src/$KERNEL_DIR/$LOGFILE" 2>&1
+	mv -f /tmp/Module.symvers .
+	find -mindepth 1 -maxdepth 1 ! -name 'arch' ! -name 'include' ! -name 'scripts' \
+	 ! -name 'tools' ! -name 'Makefile' ! -name 'Kbuild' ! -name 'Kconfig'  \
+	 ! -name '.config' ! -name 'Module.symvers' ! -name 'LICENSES' ! -name 'COPYING' \
+	 -exec rm -rf '{}' \;
+	ln -s "/boot/System.map-$KERNEL_VERSION" System.map
+	cd arch && find -mindepth 1 -maxdepth 1 -type d ! -name 'x86' -exec rm -rf '{}' \;
+	cd ..
+	cd tools && rm -rf perf/ testing/
+	cd arch && find -mindepth 1 -maxdepth 1 -type d ! -name 'x86' -exec rm -rf '{}' \;
 fi
 
 #
-# Pack new kernel modules into /boot (see SHARE variable)
+# Pack kernel modules and headers into /boot (see SHARE variable)
 #
 # the /boot path can be shared with other systems that need the same kernel, see 'kernel-pull-binary.sh'
-if [ "$SHARE" = "y" ] && [ -d "/lib/modules/$KERNEL_VERSION" ]; then
+if [ "$SHARE" = "y" ]; then
+	# pack modules
 	cd /lib/modules
 	printf '\nPack modules into /boot for sharing ...'
-	tar czf "/boot/modules-$KERNEL_VERSION.tgz" "$KERNEL_VERSION"
-	printf 'OK\n'
+	tar czf "/boot/modules-$KERNEL_VERSION.tgz" "$KERNEL_VERSION" && printf 'OK\n'
+	# pack headers only if the source directory is cleaned up
+	if [ "$CLEANUP" = "y" ]; then
+		printf 'Pack headers into /boot for sharing ...'
+		cd /usr/src
+		tar czf "/boot/headers-$KERNEL_VERSION.tgz" "$KERNEL_DIR" && printf 'OK\n'
+	fi
 	# mark the latest available version into /boot/latest
 	printf '%s' "$KERNEL_VERSION" > /boot/latest
 fi

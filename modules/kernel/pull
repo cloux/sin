@@ -43,19 +43,30 @@ printf 'New Kernel %s is available\n' "$LATEST"
 
 # download the new binary kernel
 cd /boot || exit 1
-KERNEL_FILES="config System.map modules vmlinuz"
+KERNEL_FILES="System.map config vmlinuz modules headers"
 for FILE in $KERNEL_FILES; do
 	printf 'Downloading %s ... ' "$FILE"
 	NEWFILE="${FILE}-$LATEST"
 	[ "$FILE" = "modules" ] && NEWFILE="$NEWFILE.tgz"
-	wget --no-verbose "https://$DOMAIN/boot/$NEWFILE" || exit 1
+	[ "$FILE" = "headers" ] && NEWFILE="$NEWFILE.tgz"
+	wget -4 -N -nd --no-verbose "https://$DOMAIN/boot/$NEWFILE" 2>&1 | tr '\n' ' '
 done
+
+# unpack modules
+[ -f "/boot/vmlinuz-$LATEST" ] || exit 1
 printf 'Unpack modules into /lib/modules ...'
 cd /lib/modules || exit 1
 mv -f "/boot/modules-$LATEST.tgz" .
-tar xzf "modules-$LATEST.tgz" || exit 1
+tar xzf "modules-$LATEST.tgz" && printf 'OK\n'
 rm -f "modules-$LATEST.tgz"
-printf 'OK\n'
+
+# unpack headers if available
+if [ -f "/boot/headers-$LATEST.tgz" ]; then
+	cd /usr/src
+	mv -f "/boot/headers-$LATEST.tgz" .
+	tar xzf "headers-$LATEST.tgz" && printf 'OK\n'
+	rm -f "headers-$LATEST.tgz"
+fi
 
 # apply the new kernel
 [ -x /usr/sbin/update-grub ] && /usr/sbin/update-grub
