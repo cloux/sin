@@ -50,6 +50,7 @@ for FILE in $KERNEL_FILES; do
 	[ "$FILE" = "modules" ] && NEWFILE="$NEWFILE.tgz"
 	[ "$FILE" = "headers" ] && NEWFILE="$NEWFILE.tgz"
 	wget -4 -N -nd --no-verbose "https://$DOMAIN/boot/$NEWFILE" 2>&1 | tr '\n' ' '
+	printf '\n'
 done
 
 # unpack modules
@@ -62,6 +63,7 @@ rm -f "modules-$LATEST.tgz"
 
 # unpack headers if available
 if [ -f "/boot/headers-$LATEST.tgz" ]; then
+	printf 'Unpack headers into /usr/src ...'
 	cd /usr/src
 	mv -f "/boot/headers-$LATEST.tgz" .
 	tar xzf "headers-$LATEST.tgz" && printf 'OK\n'
