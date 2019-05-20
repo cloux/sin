@@ -94,7 +94,8 @@ printf '%s' "$PATH" | grep -q '/usr/sbin' || export PATH=$PATH:/usr/sbin
 #
 # Get information about the latest kernel on kernel.org
 #
-printf 'Searching for kernel update ...\n'
+printf 'Current kernel: %s\n' "$(uname -r)" 
+printf 'Latest %s version: ' "$MONIKER" 
 # JSON file with current kernel information.
 RELEASES_LINK=https://www.kernel.org/releases.json
 cd /tmp || exit 1
@@ -126,7 +127,7 @@ KERNEL_VERSION=$(printf '%s' "$JSON" | grep -Po 'version[^,}]+' | grep -Po '\d[^
 [ $(printf '%s' "$KERNEL_VERSION" | grep -o '\.' | wc -l) -eq 1 ] && KERNEL_VERSION=$KERNEL_VERSION.0
 KERNEL_VERSION=$(printf '%s' "$KERNEL_VERSION" | sed 's/\.0\.0-/.0-/')
 
-printf 'Latest %s version: %s (%s)\n' "$MONIKER" "$KERNEL_VERSION" "$KERNEL_DATE"
+printf '%s (%s)\n' "$KERNEL_VERSION" "$KERNEL_DATE"
 if [ -e "/boot/vmlinuz-$KERNEL_VERSION" ]; then
 	printf 'We already have that one.\n'
 	exit

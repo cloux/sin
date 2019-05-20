@@ -40,7 +40,7 @@ if [ $? -ne 0 ]; then
 fi
 
 printf '\nBy using Skype, you agree to\n'
-printf '\nSkype Data Collection: https://go.skype.com/tou\n'
-printf '\nYour-Privacy-Is-Gone Terms: https://go.skype.com/privacy\n'
+printf 'Skype Data Collection: https://go.skype.com/tou\n'
+printf 'Your-Privacy-Is-Gone Terms: https://go.skype.com/privacy\n'
 
 printf '\nDONE\n'
