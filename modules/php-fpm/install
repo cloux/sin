@@ -8,7 +8,7 @@
 # dependencies:
 # gcc sed wget bison gawk re2c autoconf automake
 # libcurl4-gnutls-dev libicu-dev libbz2-dev libwebp-dev libpng-dev libjpeg-dev
-# libreadline-dev libfreetype6-dev libpq-dev libxpm-dev libsodium-dev
+# libreadline-dev libfreetype6-dev libpq-dev libxpm-dev libsodium-dev libzip-dev
 #
 # (cloux@rote.ch)
 ###########################################################

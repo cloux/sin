@@ -95,7 +95,7 @@ printf '%s' "$PATH" | grep -q '/usr/sbin' || export PATH=$PATH:/usr/sbin
 # Get information about the latest kernel on kernel.org
 #
 printf 'Current kernel: %s\n' "$(uname -r)" 
-printf 'Latest %s version: ' "$MONIKER" 
+printf 'Latest %s kernel: ' "$MONIKER" 
 # JSON file with current kernel information.
 RELEASES_LINK=https://www.kernel.org/releases.json
 cd /tmp || exit 1
