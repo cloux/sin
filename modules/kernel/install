@@ -35,12 +35,12 @@ LOGFILE=compile.log
 # Remove kernel sources, keep only headers required to compile kernel modules.
 # This makes kernel headers available for sharing.
 #CLEANUP=y
-CLEANUP=
+CLEANUP=n
 
 # Pack kernel modules into an archive in /boot for sharing.
 # Useful when combined with a webserver, and kernel-pull-binary.sh
 #SHARE=y
-SHARE=
+SHARE=n
 
 ###########################################################
 exec 2>&1

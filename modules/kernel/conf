@@ -25,13 +25,14 @@ LOGFILE=compile.log
 # Delete obsolete kernels, keep only the currently used and the new one.
 # Remove kernel sources, keep only headers required to compile kernel modules.
 # This makes kernel headers available for sharing.
-CLEANUP=y
+#CLEANUP=y
+CLEANUP=n
 
 # Pack all kernel modules into a tgz archive in /boot for sharing.
 # Useful when combined with a webserver to pull binary kernel from here.
 # If you intend to use the compiled kernel only on one machine, it is safe
 # to say no here.
-SHARE=y
+SHARE=n
 
 # Where to pull the shared binary kernel from. The shared kernel must
 # be downloadable from: https://$PULL_FROM/boot/
