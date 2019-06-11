@@ -146,7 +146,7 @@ printf '\nInstalling system compatibility scripts ...\n'
 for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
 	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
 done
-for xfile in start-statd.runit update-rc.d.runit; do
+for xfile in invoke-rc.d.runit start-statd.runit update-rc.d.runit; do
 	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
 done
 for xfile in pidof.runit; do
@@ -168,7 +168,7 @@ fi
 # activate runit supervision for currently running services
 #
 printf '\nDetect and activate current services ...\n\n'
-for PROCNAME in acpid dovecot cron elogind hiawatha nginx oomd opendkim \
+for PROCNAME in acpid dovecot cron elogind hiawatha nginx nscd oomd opendkim \
   php-fpm postfix proftpd redis-server redis-sentinel rpcbind rpc.mountd \
   smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
@@ -191,6 +191,11 @@ SRV="$(pgrep -ax dbus-daemon | grep system)"
 if [ "$SRV" ]; then
 	printf 'Found dbus: %s\n' "$SRV"
 	ln -sf /etc/sv/dbus /etc/service/
+fi
+SRV="$(pgrep -ax famd)"
+if [ "$SRV" ]; then
+	printf 'Found fam: %s\n' "$SRV"
+	ln -sf /etc/sv/fam /etc/service/
 fi
 SRV="$(pgrep -ax incrond)"
 if [ "$SRV" ]; then
