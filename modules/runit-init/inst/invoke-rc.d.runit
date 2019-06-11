@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# invoke-rc.d.runit - Executes initscript actions for runit
+#
+# Forgiving behaviour: return success exit code even on failures
+# to prevent dpkg installation errors. This seems to have better
+# compatibility with sysvinit and no negative impact in most use cases.
+#
+# (cloux@rote.ch)
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+# We need to be root
+if [ $(id -u) -ne 0 ]; then printf '%s: Need to be root!\n' "$0"; exit 1; fi
+
+if [ "$(pgrep runsvdir)" ]; then
+	# runit supervisor is active
+	for PARAM in $@; do
+		case $PARAM in
+			--query) exit 100 ;;
+			-*) continue ;;
+		esac
+		if [ -z "$SRV" ]; then
+			SRV=$PARAM
+		elif [ -z "$ACTION" ]; then
+			ACTION=$PARAM
+			break
+		fi 
+	done
+	if [ -z "$SRV" ] || [ -z "$ACTION" ]; then
+		printf '%s warning: missing parameters.\n' "${0##*/}"
+		exit 0
+	fi
+	if [ -d "/etc/service/$SRV" ]; then
+		# runit service control
+		sv "$ACTION" "$SRV"
+		# on stop, disable service supervision. required for 'dpkg --remove'
+		[ "$ACTION" = "stop" ] && rm "/etc/service/$SRV" 2>/dev/null
+	elif [ -d "/etc/sv/$SRV" ] && [ "$ACTION" = "start" ]; then
+		# enable/supervise runit service
+		ln -s "/etc/sv/$SRV" /etc/service/ 2>/dev/null
+	elif [ -x "/etc/init.d/$SRV" ]; then
+		# fallback to sysvinit
+		/etc/init.d/$SRV $ACTION
+	else
+		printf '%s warning: no way to handle service "%s"\n' "${0##*/}" "$SRV"
+	fi
+	# on stop, put back the sysvinit init.d file, dpkg might want to remove it
+	if [ "$ACTION" = "stop" ]; then
+		[ -L "/etc/init.d/$SRV" ] && rm "/etc/init.d/$SRV" 2>/dev/null
+		mv -f /etc/init.d/$SRV.sysv /etc/init.d/$SRV 2>/dev/null
+	fi
+else
+	# runit supervisor is not running, fallback to sysvinit
+	[ -x /usr/sbin/invoke-rc.d.sysv ] && /usr/sbin/invoke-rc.d.sysv $@
+fi
+
+exit 0

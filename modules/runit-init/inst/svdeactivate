@@ -3,6 +3,9 @@
 # runit service deactivation
 # (cloux@rote.ch)
 
+# We need to be root
+if [ $(id -u) -ne 0 ]; then printf '%s: Need to be root!\n' "$0"; exit 1; fi
+
 if [ $# -eq 0 ]; then
 	printf 'Enter Runit service names as a parameter.\n'
 	printf 'Supervised services are listed in /etc/service/\n'
@@ -15,7 +18,7 @@ for SRV in "$@"; do
 	SRVNAME=${SRV##*/}
 	if [ ! -d "/etc/service/$SRVNAME" ]; then
 		if [ -d "/etc/sv/$SRVNAME" ]; then
-			printf 'Runit service '%s' is already inactive\n' "$SRVNAME"
+			printf 'Runit service "%s" is already inactive\n' "$SRVNAME"
 		else
 			printf 'WARNING: Runit service definition "/etc/sv/%s" doesn'\''t exist and cannot be activated or deactivated\n' "$SRVNAME"
 		fi

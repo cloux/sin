@@ -184,7 +184,7 @@ sub create_sequence {
     # Fallback for older insserv package versions [2014-04-16]
     $insserv = "/sbin/insserv" if ( -x "/sbin/insserv");
     # If insserv is not configured it is not fully installed
-    my $insserv_installed = -x $insserv && -e "/etc/insserv.conf";
+    my $insserv_installed = -x $insserv;
     my @opts;
     push(@opts, '-f') if $force;
     # Add force flag if initscripts is not installed
