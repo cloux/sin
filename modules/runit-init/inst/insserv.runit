@@ -11,23 +11,24 @@ if [ "$(pgrep runsvdir)" ]; then
 		case $OPT in
 			s) exit 0 ;;
 			n) exit 0 ;;
-			r) DEACTIVATE=yes ;;
+			r) REMOVE=yes ;;
 		esac
 	done
-	shift "$(($OPTIND - 1))"
+	shift "$((OPTIND-1))"
 	for SRV in $*; do
 		SRVNAME=$(printf '%s' "$SRV" | grep -o '^[^,]*')
 		[ "$SRVNAME" ] || continue
-		if [ "$DEACTIVATE" ]; then
-			svdeactivate $SRVNAME
+		if [ "$REMOVE" ]; then
+			svdeactivate "$SRVNAME" >/dev/null
+			# mark service as "down" to prevent autostart
+			touch "/etc/sv/$SRVNAME/down" 2>/dev/null
 			# put back the original init-file, dpkg might want to remove it
 			mv -f /etc/init.d/$SRVNAME.sysv /etc/init.d/$SRVNAME 2>/dev/null
 			# delete rc.d symlinks
-			find /etc/ -type l -path '/etc/rc?.d/[KS]*'$SRVNAME -delete
-		elif [ -d /etc/sv/$SRVNAME ]; then
-			svactivate $SRVNAME
-			# wait for runsv supervisor to start
-			sleep 3
+			find /etc/rc?.d -type l -iname '*'$SRVNAME -delete
+		elif [ -d "/etc/sv/$SRVNAME" ]; then
+			rm -f "/etc/sv/$SRVNAME/down"
+			svactivate "$SRVNAME"
 		fi
 	done
 else
