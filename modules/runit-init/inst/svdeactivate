@@ -16,7 +16,7 @@ fi
 for SRV in "$@"; do
 	SRVNAME=${SRV##*/}
 	if [ -d "/etc/service/$SRVNAME" ]; then
-		sv stop $SRVNAME
+		sv stop $SRVNAME >/dev/null
 		rm -f "/etc/service/$SRVNAME"
 	elif [ -d "/etc/sv/$SRVNAME" ]; then
 		printf '%s: runit service "%s" is already inactive\n' "${0##*/}" "$SRVNAME"
