@@ -13,6 +13,7 @@
 #RUNIT_GIT=https://salsa.debian.org/runit-team/runit.git
 RUNIT_GIT=https://github.com/cloux/runit
 RUNIT_BASE_GIT=https://github.com/cloux/runit-base
+RUNIT_UTILS_GIT=https://github.com/cloux/runit-utils
 
 # load config file
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
@@ -57,14 +58,14 @@ if [ -d "${RUNIT_GIT##*/}" ]; then
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
 		printf 'Source is up to date.\n'
 	else
-		git pull -q || exit 1
+		git pull -q
 	fi
 else
 	# install dependencies
 	[ "$APTINST" ] && $APTINST --assume-yes -o Dpkg::Use-Pty=0 \
 	  install git gcc make
 	# clone repo
-	git clone -q $RUNIT_GIT || exit 1
+	git clone -q --depth 1 $RUNIT_GIT || exit 1
 	cd ${RUNIT_GIT##*/}
 fi
 cd runit*
@@ -106,11 +107,11 @@ if [ -d ${RUNIT_BASE_GIT##*/} ]; then
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
 		printf 'Source is up to date.\n'
 	else
-		git pull -q || exit 1
+		git pull -q
 	fi
 else
 	# clone repo
-	git clone -q $RUNIT_BASE_GIT || exit 1
+	git clone -q --depth 1 $RUNIT_BASE_GIT || exit 1
 	cd ${RUNIT_BASE_GIT##*/}
 fi
 if ! grep -q runit /proc/1/cmdline || [ "$OVERWRITE_RUNIT_BASE" = "yes" ]; then
@@ -127,6 +128,41 @@ else
 fi
 
 #
+# runit-utils support scripts (git clone/pull)
+#
+printf '\nInstalling runit-utils from %s ...\n' "$RUNIT_UTILS_GIT"
+cd /usr/src
+if [ -d ${RUNIT_UTILS_GIT##*/} ]; then
+	cd ${RUNIT_UTILS_GIT##*/}
+	git fetch -q --all || exit 1
+	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
+		printf 'Source is up to date.\n'
+	else
+		git pull -q
+	fi
+else
+	# clone repo
+	git clone -q --depth 1 $RUNIT_UTILS_GIT || exit 1
+fi
+cd /usr/src/${RUNIT_UTILS_GIT##*/}/compat
+for xfile in shutdown.runit insserv.runit; do
+	cp -ufv --preserve=mode "$xfile" /sbin/$xfile
+done
+for xfile in invoke-rc.d.runit start-statd.runit update-rc.d.runit; do
+	cp -ufv --preserve=mode "$xfile" /usr/sbin/$xfile
+done
+for xfile in pidof.runit; do
+	cp -ufv --preserve=mode "$xfile" /bin/$xfile
+done
+cd /usr/src/${RUNIT_UTILS_GIT##*/}/support && cp -ufv --preserve=mode -t /sbin/ *
+
+#
+# install config files
+#
+[ -d /etc/apt/preferences.d/ ] && cp -ufv "${MODULE_PATH}/inst/apt-runit-init" \
+  /etc/apt/preferences.d/runit-init 2>/dev/null
+
+#
 # install socklog using a separate installer
 # NOTE: this expects the Simple Installer directory structure
 #
@@ -137,24 +173,6 @@ else
 	printf '\nWARNING: Socklog installer is missing, expected to be here:\n%s\n' \
 	"$SOCKLOG_INSTALLER"
 fi
-
-#
-# copy support scripts and config files
-#
-printf '\nInstalling system compatibility scripts ...\n'
-# copy non-conflicting scripts
-for xfile in svactivate svdeactivate shutdown.runit insserv.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /sbin/$xfile
-done
-for xfile in invoke-rc.d.runit start-statd.runit update-rc.d.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /usr/sbin/$xfile
-done
-for xfile in pidof.runit; do
-	cp -pufv "${MODULE_PATH}/inst/$xfile" /bin/$xfile
-done
-# copy config files
-[ -d /etc/apt/preferences.d/ ] && cp -ufv ${0%/*}/inst/apt-runit-init \
-  /etc/apt/preferences.d/runit-init 2>/dev/null
 
 #
 # exit if runit is already PID1
@@ -168,9 +186,9 @@ fi
 # activate runit supervision for currently running services
 #
 printf '\nDetect and activate current services ...\n\n'
-for PROCNAME in acpid dovecot cron elogind hiawatha nginx nscd oomd opendkim \
-  php-fpm postfix proftpd redis-server redis-sentinel rpcbind rpc.mountd \
-  smbd uuidd wicd; do
+for PROCNAME in acpid cron dovecot dnsmasq elogind hiawatha nginx nscd oomd \
+  opendkim php-fpm postfix proftpd redis-server redis-sentinel rpcbind \
+  rpc.mountd smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf 'Found %s: %s\n' "$PROCNAME" "$SRV"

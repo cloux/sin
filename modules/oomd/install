@@ -19,7 +19,7 @@ else
 	apt-get --assume-yes -o Dpkg::Use-Pty=0 install \
 	  cmake g++ git meson ninja-build libjsoncpp-dev pkg-config || exit 1
 	# clone repo
-	git clone https://github.com/facebookincubator/oomd || exit 1
+	git clone --depth 1 https://github.com/facebookincubator/oomd || exit 1
 	cd oomd
 fi
 

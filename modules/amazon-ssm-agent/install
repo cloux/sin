@@ -40,7 +40,7 @@ if [ -d testify ]; then
 	git pull
 else
 	# clone repository
-	git clone https://github.com/stretchr/testify
+	git clone --depth 1 https://github.com/stretchr/testify
 fi
 
 # get amazon-ssm-agent
@@ -53,7 +53,7 @@ if [ -d amazon-ssm-agent ]; then
 	git pull
 else
 	# clone repository
-	git clone https://github.com/aws/amazon-ssm-agent
+	git clone --depth 1 https://github.com/aws/amazon-ssm-agent
 	cd amazon-ssm-agent || exit 1
 fi
 # link the codebase to /usr/src, to make it more "visible"
