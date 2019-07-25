@@ -186,8 +186,8 @@ fi
 # activate runit supervision for currently running services
 #
 printf '\nDetect and activate current services ...\n\n'
-for PROCNAME in acpid cron dovecot dnsmasq elogind hiawatha nginx nscd oomd \
-  opendkim php-fpm postfix proftpd redis-server redis-sentinel rpcbind \
+for PROCNAME in acpid cron dovecot dnsmasq elogind hiawatha lircd nginx nscd \
+  oomd opendkim php-fpm postfix proftpd redis-server redis-sentinel rpcbind \
   rpc.mountd smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
