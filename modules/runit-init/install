@@ -259,7 +259,9 @@ fi
 DEFAULT_DISPLAY_MANAGER="$(head -n 1 /etc/X11/default-display-manager 2>/dev/null)"
 if [ -x "$DEFAULT_DISPLAY_MANAGER" ]; then
 	printf 'Found display manager: %s - activating X11dm\n' "${DEFAULT_DISPLAY_MANAGER##*/}"
-	ln -sfv /etc/sv/X11dm /etc/service/
+	ln -sf /etc/sv/X11dm /etc/service/
+	ln -sf /etc/sv/dbus /etc/service/
+	ln -sf /etc/sv/elogind /etc/service/
 else
 	printf 'Display manager not found, deactivating X11dm\n'
 	rm -f /etc/service/X11dm
