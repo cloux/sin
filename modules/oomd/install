@@ -26,8 +26,12 @@ fi
 # build
 meson build || exit 1
 ninja -C build || exit 1
-cd build
 
 # install
+cd build
 ninja install || exit 1
+
+# cleanup
+cd .. && rm -rf build
+
 printf '\nDONE\n'
