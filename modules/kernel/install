@@ -38,7 +38,7 @@ LOGFILE=compile.log
 CLEANUP=n
 
 # Pack kernel modules into an archive in /boot for sharing.
-# Useful when combined with a webserver, and kernel-pull-binary.sh
+# Useful when combined with a webserver and 'sin pull kernel' command.
 #SHARE=y
 SHARE=n
 
@@ -74,15 +74,15 @@ APTINST="$(command -v aptitude)"
 export DEBIAN_FRONTEND=noninteractive
 if [ -z "$(command -v wget)" ] || [ -z "$(command -v bc)" ] || \
    [ -z "$(command -v bison)" ] || [ -z "$(command -v flex)" ] || \
-   [ -z "$(command -v lz4c)" ]; then \
+   [ -z "$(command -v lz4c)" ] || [ -z "$(command -v jq)" ]; then \
 	if [ "$APTINST" ]; then
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 update
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install \
-		  wget bc bison flex libssl-dev libelf-dev lz4
+		  wget bc bison flex libssl-dev libelf-dev lz4 jq
 	fi
 fi
-for DEP in wget bc bison flex lz4c; do
-	if [ -z "$(command -v $DEP)" ]; then
+for DEP in wget bc bison flex lz4c jq; do
+	if ! command -v "$DEP" >/dev/null; then
 		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
 		exit 1
 	fi
@@ -98,32 +98,25 @@ printf 'Current kernel: %s\n' "$(uname -r)"
 printf 'Latest %s kernel: ' "$MONIKER" 
 # JSON file with current kernel information.
 RELEASES_LINK=https://www.kernel.org/releases.json
+RELEASES_FILE="$(printf %s "$RELEASES_LINK" | grep -o '[^/]*$')"
 cd /tmp || exit 1
-wget -q -N -4 "$RELEASES_LINK"
-RELEASES_FILE=$(printf '%s' "$RELEASES_LINK" | grep -Po '(?<=/)[^"/]+$')
-if [ ! -e "$RELEASES_FILE" ]; then
+if ! wget -q -N -4 "$RELEASES_LINK"; then
 	printf 'ERROR: Link %s not available!\n' "$RELEASES_LINK"
 	exit 1
 fi
-if [ "$MONIKER" = "stable" ]; then
-	LATEST_STABLE_VER=$(tr -d ' \n' < "$RELEASES_FILE" | grep -Po '"latest_stable"[^}]+' | grep -Po '\d[^"}]+')
-	JSON=$(tr -d ' \n' < "$RELEASES_FILE" | grep -Po '[^{]+"'$LATEST_STABLE_VER'"[^}]+}[^}]*')
-else
-	JSON=$(tr -d ' \n' < "$RELEASES_FILE" | grep -Po '[^{]+"'$MONIKER'"[^}]+}[^}]*' | head -n 1)
-fi
-# remove temporary JSON kernel info file
+# select MONIKER json
+KERNEL_JSON="$(jq -c '.releases | map(select(.moniker == "'$MONIKER'"))[0]' "$RELEASES_FILE")"
 rm "$RELEASES_FILE"
-if [ -z "$JSON" ]; then
-	printf 'ERROR: JSON moniker section for "%s" not found.\n' "$MONIKER"
+if [ -z "$KERNEL_JSON" ]; then
+	printf 'ERROR: Moniker "%s" not found.\n' "$MONIKER"
 	exit 1
 fi
-KERNEL_DATE=$(printf '%s' "$JSON" | grep -Po 'isodate[^,}]+' | grep -Po '\d[^"]+')
-KERNEL_LINK=$(printf '%s' "$JSON" | grep -Po 'source[^,}]+' | grep -Po '[^"]+/[^"]+')
-KERNEL_FILE=$(printf '%s' "$KERNEL_LINK" | grep -Po '[^/]+$')
+KERNEL_LINK=$(printf '%s' "$KERNEL_JSON" | jq -r '.source')
+KERNEL_DATE=$(printf '%s' "$KERNEL_JSON" | jq -r '.released.isodate?')
 # Work around weird version numbering differences:
 # The numbering scheme in the JSON might differ from vmlinuz-XY kernel
 # file name when 0's are involved, like "4.0.0", but "4.0-rc1" :/
-KERNEL_VERSION=$(printf '%s' "$JSON" | grep -Po 'version[^,}]+' | grep -Po '\d[^"}]+' | sed 's/-/.0-/')
+KERNEL_VERSION=$(printf '%s' "$KERNEL_JSON" | jq -r '.version' | sed 's/-/.0-/')
 [ $(printf '%s' "$KERNEL_VERSION" | grep -o '\.' | wc -l) -eq 1 ] && KERNEL_VERSION=$KERNEL_VERSION.0
 KERNEL_VERSION=$(printf '%s' "$KERNEL_VERSION" | sed 's/\.0\.0-/.0-/')
 
@@ -152,6 +145,7 @@ fi
 # Download new kernel
 #
 cd /usr/src || exit 1
+KERNEL_FILE=$(printf '%s' "$KERNEL_LINK" | grep -o '[^/]*$')
 if [ ! -e "$KERNEL_FILE" ]; then
 	printf '\nDownloading ...\n'
 	wget -4 --progress=dot:giga "$KERNEL_LINK"

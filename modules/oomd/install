@@ -30,6 +30,11 @@ ninja -C build || exit 1
 # install
 cd build
 ninja install || exit 1
+# copy default config to /etc
+if [ ! -f /etc/oomd.json ]; then
+	CONFIG="$(find /usr/src/oomd -iname 'desktop.json' -print0 -quit)"
+	[ -f "$CONFIG" ] && cp "$CONFIG" /etc/oomd.json
+fi
 
 # cleanup
 cd .. && rm -rf build

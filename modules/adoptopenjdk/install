@@ -47,6 +47,14 @@ else
 	  printf '%s\n' "$MANPATH_LINE" >> ~/.manpath
 fi
 
+# check dependencies
+for DEP in wget jq; do
+	if ! command -v "$DEP" >/dev/null; then
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
+		exit 1
+	fi
+done
+
 printf '\nSearching for latest %s%s-%s for %s %s ... ' "$BIN_TYPE" "$VERSION" "$JVM" "$OS" "$ARCH"
 
 API_ASSETS='https://api.adoptopenjdk.net/v2/latestAssets'
@@ -55,16 +63,16 @@ ASSET_JSON="$(wget -qN4 -O - "$API_ASSETS")"
 [ $? -eq 0 ] || exit 1
 
 # parse single JSON element
-SEMVER=$(printf '%s' "$ASSET_JSON" | grep -o 'semver"[^,]*' | grep -o '[^"]*"[^"]*$' | grep -o '^[^"]*')
+SEMVER=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].version_data.semver')
 if [ -z "$SEMVER" ]; then
 	printf 'error, invalid reply:\n%s\n' "$ASSET_JSON"
 	exit 1
 fi
-BIN_SIZE=$(printf '%s' "$ASSET_JSON" | grep -o 'binary_size"[^,]*' | grep -o '[0-9]*')
+BIN_SIZE=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].binary_size')
 printf 'found: v%s (%s MB)\n\n' "$SEMVER" "$((BIN_SIZE/1024/1024))"
 
 # parse download link
-BIN_LINK=$(printf '%s' "$ASSET_JSON" | grep -o 'binary_link"[^,]*' | grep -o '[^"]*"[^"]*$' | grep -o '^[^"]*')
+BIN_LINK=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].binary_link')
 if [ -z "$BIN_LINK" ]; then
 	printf 'Error: invalid link in reply.\n'
 	exit 1
