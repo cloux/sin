@@ -1,0 +1,43 @@
+#!/bin/sh
+# Kuberentes Control Interface
+# https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-linux
+#
+# (cloux@rote.ch)
+
+printf "Install kubectl\n\n"
+
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
+
+# check versions
+if [ "$(command -v kubectl)" ]; then
+	CURRENT=$(kubectl version 2>/dev/null | sed 's/.*GitVersion: *"//' | grep -o '^[^"]*')
+	printf 'Current version: %s\n' "$CURRENT" 
+fi
+printf ' Latest version: '
+LATEST_STABLE_LINK="https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+LATEST=$(wget -q "$LATEST_STABLE_LINK" -O - 2>/dev/null)
+if [ -z "$LATEST" ]; then
+	printf "ERROR: latest version check failed.\n"
+	exit
+fi
+printf '%s\n\n' "$LATEST"
+if [ "$CURRENT" = "$LATEST" ]; then
+	printf 'Up to date, nothing to do.\n'
+	exit
+fi
+
+# download
+cd /tmp || exit 1
+KUBECTL_LINK="https://storage.googleapis.com/kubernetes-release/release/$LATEST/bin/linux/amd64/kubectl"
+wget -4 -N -nd --progress=dot:giga "$KUBECTL_LINK"
+if [ $? -ne 0 ] || [ ! -s kubectl ]; then
+	printf "ERROR: download failed.\n"
+	exit
+fi
+
+# install
+printf 'Installing to /usr/local/bin/ ...\n'
+chmod 755 kubectl
+mv -f -t /usr/local/bin/ kubectl || exit 1
+
+printf '\nDONE\n'

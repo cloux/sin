@@ -24,6 +24,7 @@ else
 fi
 
 # build
+rm -rf build
 meson build || exit 1
 ninja -C build || exit 1
 

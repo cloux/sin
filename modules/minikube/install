@@ -1,0 +1,51 @@
+#!/bin/sh
+# Minikube - tool to run kuberentes locally
+#
+# (cloux@rote.ch)
+
+printf "Install minikube\n\n"
+
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
+
+# check dependencies
+for DEP in wget jq; do
+	if ! command -v "$DEP" >/dev/null; then
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
+		exit 1
+	fi
+done
+
+# check versions
+if [ "$(command -v minikube)" ]; then
+	CURRENT=$(minikube version | grep version | grep -o '[^ ]*$')
+	printf 'Current version: %s\n' "$CURRENT" 
+fi
+printf ' Latest version: '
+LATEST_STABLE_LINK="https://api.github.com/repos/kubernetes/minikube/releases/latest"
+LATEST=$(wget -q "$LATEST_STABLE_LINK" -O - 2>/dev/null | jq -r '.name')
+if [ -z "$LATEST" ]; then
+	printf "ERROR: latest version check failed.\n"
+	exit
+fi
+printf '%s\n\n' "$LATEST"
+if [ "$CURRENT" = "$LATEST" ]; then
+	printf 'Up to date, nothing to do.\n'
+	exit
+fi
+
+# download
+cd /tmp || exit 1
+
+MINIKUBE_LINK="https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
+wget -4 -N -nd --progress=dot:giga "$MINIKUBE_LINK"
+if [ $? -ne 0 ] || [ ! -s $FILENAME ]; then
+	printf "ERROR: download failed.\n"
+	exit
+fi
+
+# install
+printf 'Installing to /usr/local/bin/ ...\n'
+chmod 755 kubectl
+mv -f -t /usr/local/bin/ kubectl || exit 1
+
+printf '\nDONE\n'
