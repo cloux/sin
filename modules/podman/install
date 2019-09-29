@@ -53,15 +53,17 @@ if [ -z "$(command -v podman)" ]; then
 fi
 
 # install
-make BUILDTAGS="seccomp exclude_graphdriver_devicemapper
-$(hack/apparmor_tag.sh 2>/dev/null) 
-$(hack/btrfs_installed_tag.sh 2>/dev/null)
-$(hack/selinux_tag.sh 2>/dev/null)
-$(hack/systemd_tag.sh 2>/dev/null)" -j $(nproc)
+BTAGS="seccomp exclude_graphdriver_devicemapper"
+BTAGS="$BTAGS $(hack/apparmor_tag.sh 2>/dev/null)"
+BTAGS="$BTAGS $(hack/btrfs_installed_tag.sh 2>/dev/null)"
+BTAGS="$BTAGS $(hack/selinux_tag.sh 2>/dev/null)"
+BTAGS="$BTAGS $(hack/systemd_tag.sh 2>/dev/null)"
+make BUILDTAGS="$BTAGS" -j $(nproc)
 make install PREFIX=/usr || exit 1
 
 # cleanup
 printf 'Remove source /usr/src/%s\n' "$POD_SRCDIR"
+cd /usr/src
 rm -rf "/usr/src/$POD_SRCDIR"
 
 # install conmon
