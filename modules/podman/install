@@ -33,7 +33,7 @@ fi
 printf 'Download source code ...\n\n'
 cd /usr/src
 LATEST_FILE="podman-v${LATEST_VERSION}.tar.gz"
-wget -4 -r -nd -nc --progress=dot:giga $LATEST_LINK -O "$LATEST_FILE" || exit 1
+wget -4 -nd -nc --progress=dot:giga $LATEST_LINK -O "$LATEST_FILE" || exit 1
 [ -s "$LATEST_FILE" ] || exit 1
 printf 'Unpacking %s ...\n' "$LATEST_FILE"
 tar xzf "$LATEST_FILE" || exit 1
@@ -60,9 +60,20 @@ BTAGS="$BTAGS $(hack/selinux_tag.sh 2>/dev/null)"
 BTAGS="$BTAGS $(hack/systemd_tag.sh 2>/dev/null)"
 make BUILDTAGS="$BTAGS" -j $(nproc)
 make install PREFIX=/usr || exit 1
+make install.completions PREFIX=/usr
+
+# add default config
+mkdir -p /etc/containers
+cp -n -t /etc/containers/ ./libpod.conf ./seccomp.json 2>/dev/null
+[ ! -f /etc/containers/registries.conf ] && wget -4 -nd -nc --progress=dot:giga \
+  https://raw.githubusercontent.com/projectatomic/registries/master/registries.fedora \
+  -O /etc/containers/registries.conf
+[ ! -f /etc/containers/policy.json ] && wget -4 -nd -nc --progress=dot:giga \
+  https://raw.githubusercontent.com/containers/skopeo/master/default-policy.json \
+  -O /etc/containers/policy.json
 
 # cleanup
-printf 'Remove source /usr/src/%s\n' "$POD_SRCDIR"
+printf 'Remove source /usr/src/%s\n\n' "$POD_SRCDIR"
 cd /usr/src
 rm -rf "/usr/src/$POD_SRCDIR"
 
@@ -70,4 +81,4 @@ rm -rf "/usr/src/$POD_SRCDIR"
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 "${MODULE_PATH}/conmon"
 
-printf '\nDONE\n'
+printf 'DONE\n'

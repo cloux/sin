@@ -3,7 +3,7 @@
 #
 # (cloux@rote.ch)
 
-printf 'Install conmon\n'
+printf 'Install conmon\n\n'
 
 if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
@@ -23,7 +23,7 @@ if [ -z "$LATEST_VERSION" ]; then
 	printf "ERROR: latest version check failed.\n"
 	exit
 fi
-printf '%s\n' "$LATEST_VERSION"
+printf '%s\n\n' "$LATEST_VERSION"
 if [ "$INST_VERSION" ] && [ "$LATEST_VERSION" = "$INST_VERSION" ]; then
 	printf 'conmon is up to date.\n'
 	exit
@@ -33,7 +33,7 @@ fi
 printf 'Download source code ...\n\n'
 cd /usr/src
 LATEST_FILE="conmon-v${LATEST_VERSION}.tar.gz"
-wget -4 -r -nd -nc --progress=dot:giga $LATEST_LINK -O "$LATEST_FILE" || exit 1
+wget -4 -nd -nc --progress=dot:giga $LATEST_LINK -O "$LATEST_FILE" || exit 1
 [ -s "$LATEST_FILE" ] || exit 1
 printf 'Unpacking %s ...\n' "$LATEST_FILE"
 tar xzf "$LATEST_FILE" || exit 1
@@ -55,5 +55,5 @@ make -j $(nproc)
 make install PREFIX=/usr || exit 1
 
 # cleanup
-printf 'Remove source /usr/src/%s\n' "$SRCDIR"
+printf 'Remove source /usr/src/%s\n\n' "$SRCDIR"
 rm -rf "/usr/src/$SRCDIR"
