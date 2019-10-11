@@ -1,0 +1,68 @@
+#!/bin/sh
+# helm - package manager for Kubernetes
+#
+# (cloux@rote.ch)
+
+printf 'Install helm\n\n'
+
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
+
+# check dependencies
+for DEP in wget jq; do
+	if ! command -v "$DEP" >/dev/null; then
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
+		exit 1
+	fi
+done
+
+# check versions
+ARCH=$(uname -m)
+case $ARCH in
+	x86|i386|i686) ARCH="386" ;;
+	x86_64) ARCH="amd64" ;;
+esac
+if [ "$(command -v helm)" ]; then
+	INST_VERSION=$(helm version 2>/dev/null | grep -o '"v[a-z0-9.\-]*"' | grep -o '[0-9][^"]*')
+	printf 'Installed version: %s\n' "$INST_VERSION" 
+fi
+printf '   Latest version: '
+JSON_FILE=$(mktemp)
+LATEST_STABLE_LINK="https://api.github.com/repos/helm/helm/releases/latest"
+wget -q "$LATEST_STABLE_LINK" -O "$JSON_FILE" 2>/dev/null
+LATEST_VERSION=$(jq -r '.name' "$JSON_FILE" | grep -o '[0-9.]*')
+LATEST_LINK=$(jq '.body' "$JSON_FILE" | grep -o 'http[^)]*gz' | grep -i "$(uname -s)-$ARCH" | head -n 1)
+rm "$JSON_FILE"
+if [ -z "$LATEST_VERSION" ] || [ -z "$LATEST_LINK" ]; then
+	printf 'ERROR: latest version not found.\n'
+	exit
+fi
+printf '%s\n\n' "$LATEST_VERSION"
+if [ "$INST_VERSION" ] && [ "$LATEST_VERSION" = "$INST_VERSION" ]; then
+	printf 'Up to date, nothing to do.\n'
+	exit
+fi
+
+# download
+TMPDIR=$(mktemp -d)
+cd $TMPDIR || exit 1
+wget -4 -N -nd --progress=dot:giga "$LATEST_LINK"
+if [ $? -ne 0 ]; then
+	printf 'ERROR: download failed.\n'
+	rm -rf "$TMPDIR"
+	exit
+fi
+FILENAME=$(printf '%s' "$LATEST_LINK" | grep -o '[^/]*$')
+
+# install
+printf 'Installing to /usr/local/bin/ ...\n'
+tar xzf $FILENAME
+find -type f -name 'helm' -exec mv -vf -t /usr/local/bin/ '{}' \; -quit
+cd && rm -rf "$TMPDIR"
+
+# shell completions
+[ -d /usr/share/bash-completion/completions ] &&
+	helm completion bash 2>/dev/null > /usr/share/bash-completion/completions/helm
+[ -d /usr/share/zsh/site-functions ] &&
+	helm completion zsh 2>/dev/null > /usr/share/zsh/site-functions/_helm
+
+printf '\nDONE\n'
