@@ -43,7 +43,7 @@ mv -f -t /usr/local/bin/ kubectl || exit 1
 # shell completions
 [ -d /usr/share/bash-completion/completions ] &&
 	kubectl completion bash 2>/dev/null > /usr/share/bash-completion/completions/kubectl
-[ -d /usr/share/zsh/site-functions ] &&
-	kubectl completion zsh 2>/dev/null > /usr/share/zsh/site-functions/_kubectl
+[ -d /usr/share/zsh/vendor-completions ] &&
+	kubectl completion zsh 2>/dev/null > /usr/share/zsh/vendor-completions/_kubectl
 
 printf '\nDONE\n'
