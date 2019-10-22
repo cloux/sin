@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Dapr - event driven portable runtime for building microservices on cloud
+# https://dapr.io/
+#
+# (cloux@rote.ch)
+
+printf 'Install dapr\n\n'
+
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
+
+# check dependencies
+for DEP in wget jq; do
+	if ! command -v "$DEP" >/dev/null; then
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
+		exit 1
+	fi
+done
+
+# check versions
+if [ "$(command -v dapr)" ]; then
+	INST_VERSION=$(dapr --version 2>/dev/null | grep -io 'cli.*' | grep -io '[0-9].*[0-9a-z]')
+	printf 'Installed version: %s\n' "$INST_VERSION" 
+fi
+printf '   Latest version: '
+PLATFORM=$(uname -s)
+ARCH=$(uname -m)
+case $ARCH in
+	x86_64) ARCH='amd64' ;;
+	aarch64) ARCH='arm64' ;;
+	armv7*) ARCH='arm' ;;
+esac
+RELEASES_LINK="https://api.github.com/repos/dapr/cli/releases"
+LATEST_LINK="$(wget -q "$RELEASES_LINK" -O - 2>/dev/null |
+jq -r 'max_by(.created_at) | .assets[].browser_download_url' |
+grep -i "${PLATFORM}_$ARCH")"
+LATEST_VERSION=$(printf '%s' "$LATEST_LINK" | grep -o '/v[0-9][^/]*' | grep -o '[0-9].*')
+if [ -z "$LATEST_VERSION" ] || [ -z "$LATEST_LINK" ]; then
+	printf 'ERROR: latest version not found.\n'
+	exit
+fi
+printf '%s\n\n' "$LATEST_VERSION"
+if [ "$INST_VERSION" ] && [ "$LATEST_VERSION" = "$INST_VERSION" ]; then
+	printf 'Up to date, nothing to do.\n'
+	exit
+fi
+
+# download
+TMPDIR=$(mktemp -d)
+cd $TMPDIR || exit 1
+wget -4 -N -nd --progress=dot:giga "$LATEST_LINK"
+if [ $? -ne 0 ]; then
+	printf 'ERROR: download failed.\n'
+	rm -rf "$TMPDIR"
+	exit
+fi
+FILENAME="${LATEST_LINK##*/}"
+
+# install
+printf 'Installing to /usr/local/bin/ ...\n'
+tar xzf $FILENAME
+find -type f -name 'dapr' -exec mv -vf -t /usr/local/bin/ '{}' \; -quit
+cd && rm -rf "$TMPDIR"
+
+printf '\nDONE\n'
