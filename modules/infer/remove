@@ -1,0 +1,12 @@
+#!/bin/sh
+# Infer uninstallation
+#
+# (cloux@rote.ch)
+
+printf 'Remove infer ...\n'
+
+if [ $(id -u) -ne 0 ]; then printf '\nNeed to be root!\n'; exit 1; fi
+
+rm -rf /opt/infer* /usr/local/bin/infer* /usr/local/share/man/man1/infer*
+
+printf 'DONE\n'
