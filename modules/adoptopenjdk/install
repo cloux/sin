@@ -26,6 +26,7 @@ HEAP_SIZE=normal
 # use configuration file to override the defaults above
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 [ -r "$MODULE_PATH/conf" ] && . "$MODULE_PATH/conf"
+[ -r /etc/default/adoptopenjdk ] && . /etc/default/adoptopenjdk
 
 ##################################################################
 printf 'AdoptOpenJDK installer - '
