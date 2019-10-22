@@ -6,57 +6,66 @@
 # (cloux@rote.ch)
 #
 
-INFER_DOWNLOAD_PAGE="https://github.com/facebook/infer/releases/latest"
+printf 'Install infer\n\n'
 
 # need to be root
 if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
-# use archive directory
-ARCHIVE_DIR=/var/cache/sin
-[ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
-cd $ARCHIVE_DIR || exit 1
+# check dependencies
+for DEP in wget jq; do
+	if ! command -v "$DEP" >/dev/null; then
+		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
+		exit 1
+	fi
+done
 
-# find latest version
-printf 'Searching for Infer installer ... '
-INFER_LINK=$(wget -q "$INFER_DOWNLOAD_PAGE" -O - 2>/dev/null | grep -o '/facebook[^"]*download/[^"]*infer-linux[^"]*\.tar\.xz')
-if [ -z "$INFER_LINK" ]; then
-	printf 'FAILED\n'
-	exit 1
+# check version
+if [ "$(command -v infer)" ]; then
+	INST_VERSION=$(infer --version 2>/dev/null | grep version | grep -o '[0-9].*')
+	printf 'Installed version: %s\n' "$INST_VERSION" 
 fi
-INFER_LINK="https://github.com"$INFER_LINK
-TAR_FILE=$(printf '%s' "$INFER_LINK" | grep -o '[^/]*$')
-INFER_VER=$(printf '%s' "$TAR_FILE" | grep -o 'v[0-9.]*[0-9]')
-if [ -z "$INFER_VER" ]; then
-	printf 'ERROR - unknown installer version: %s\n' "$TAR_FILE"
-	exit 1
+printf '   Latest version: '
+JSON_FILE=$(mktemp)
+LATEST_STABLE_LINK="https://api.github.com/repos/facebook/infer/releases/latest"
+wget -q "$LATEST_STABLE_LINK" -O "$JSON_FILE" 2>/dev/null
+LATEST_VERSION=$(jq -r '.tag_name' "$JSON_FILE" | grep -o '[0-9].*')
+LATEST_LINK=$(jq -r '.assets[] | .browser_download_url' "$JSON_FILE" | grep -i $(uname -s))
+rm "$JSON_FILE"
+if [ -z "$LATEST_VERSION" ] || [ -z "$LATEST_LINK" ]; then
+	printf 'ERROR: latest version not found.\n'
+	exit
 fi
-printf 'found %s\n\n' "$INFER_VER"
-if [ -f "$TAR_FILE" ]; then
-	printf 'Latest version is already installed, nothing to do.\n'
+printf '%s\n\n' "$LATEST_VERSION"
+if [ "$INST_VERSION" ] && [ "$LATEST_VERSION" = "$INST_VERSION" ]; then
+	printf 'Up to date, nothing to do.\n'
 	exit
 fi
 
 # download
-wget -4 -N -nd --progress=dot:giga "$INFER_LINK" || exit 1
-if [ ! -f "$TAR_FILE" ]; then
-	printf 'Download failed.\n'
-	exit 1
+TMPDIR=$(mktemp -d)
+cd $TMPDIR || exit 1
+wget -4 -N -nd --progress=dot:giga "$LATEST_LINK"
+if [ $? -ne 0 ]; then
+	printf 'ERROR: download failed.\n'
+	cd && rm -rf "$TMPDIR"
+	exit
 fi
 
 # install
-printf 'Installing Infer ...\n'
-tar -xJf "$TAR_FILE" || exit 1
-INFER_DIR="${TAR_FILE%.tar.xz}"
+printf 'Installing to /usr/local/bin/ ...\n'
+FILENAME="${LATEST_LINK##*/}"
+tar xJf "$FILENAME" || exit 1
+INFER_DIR="$(find -maxdepth 1 -type d -iname 'infer*' -printf '%f' -quit)"
 if [ ! -d "$INFER_DIR" ]; then
-	printf 'ERROR: path %s not found.\n' "$INFER_DIR"
+	printf 'ERROR: path for infer not found.\n'
 	exit 1
 fi
-rm -rf /opt/infer-linux*
+rm -rf /opt/infer* /usr/local/bin/infer* /usr/local/share/man/man1/infer*
 mv -f -t /opt/ "$INFER_DIR"
-[ -x /opt/"$INFER_DIR"/bin/infer ] && ln -sf /opt/"$INFER_DIR"/bin/infer /usr/bin/infer
+ln -vsf -t /usr/local/bin/ /opt/"$INFER_DIR"/bin/infer*
+mv -vf -t /usr/local/share/man/man1/ /opt/"$INFER_DIR"/share/man/man1/*
 
 # cleanup
-printf 'Cleanup ...\n'
-find "$ARCHIVE_DIR" -maxdepth 1 -type f -iname 'infer-*' ! -iname "$TAR_FILE" -delete
+cd && rm -rf "$TMPDIR"
 
-printf '\nDONE\n\n'
+printf '\nDONE\n'
