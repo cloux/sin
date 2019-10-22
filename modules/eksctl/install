@@ -44,7 +44,7 @@ if [ $? -ne 0 ]; then
 	printf 'ERROR: download failed.\n'
 	exit
 fi
-FILENAME=$(printf '%s' "$LATEST_LINK" | grep -o '[^/]*$')
+FILENAME="${LATEST_LINK##*/}"
 
 # install
 printf 'Installing to /usr/local/bin/ ...\n'
@@ -55,7 +55,7 @@ mv -f -t /usr/local/bin/ eksctl || exit 1
 # shell completions
 [ -d /usr/share/bash-completion/completions ] &&
 	eksctl completion bash 2>/dev/null > /usr/share/bash-completion/completions/eksctl
-[ -d /usr/share/zsh/site-functions ] &&
-	eksctl completion zsh 2>/dev/null > /usr/share/zsh/site-functions/_eksctl
+[ -d /usr/share/zsh/vendor-completions ] &&
+	eksctl completion zsh 2>/dev/null > /usr/share/zsh/vendor-completions/_eksctl
 
 printf '\nDONE\n'
