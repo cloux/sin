@@ -61,6 +61,8 @@ BTAGS="$BTAGS $(hack/systemd_tag.sh 2>/dev/null)"
 make BUILDTAGS="$BTAGS" -j $(nproc)
 make install PREFIX=/usr || exit 1
 make install.completions PREFIX=/usr
+[ -f /usr/share/zsh/site-functions/_podman ] &&
+  mv -f /usr/share/zsh/site-functions/_podman /usr/share/zsh/vendor-completions/_podman
 
 # add default config
 mkdir -p /etc/containers
