@@ -1,0 +1,40 @@
+#!/bin/sh
+# remove all JDK versions except the current default
+#
+
+printf 'Remove all JDK installations except default\n\n'
+
+if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
+
+ALT=$(command -v update-alternatives || command -v alternatives)
+if [ ! -x "$ALT" ]; then
+	printf 'ERROR: alternatives system not found\n'
+	exit
+fi
+
+# remove all JDK installations except current
+JVMDIR=/usr/lib/jvm
+cd "$JVMDIR" || exit
+CUR_JAVA=$($ALT --display java 2>/dev/null | grep currently | grep -o '/.*')
+for jdk in $(find -maxdepth 1 -type d -iname 'jdk*' -printf '%f '); do
+	JVM_BIN="$JVMDIR/$jdk/bin"
+	[ "$JVM_BIN/java" = "$CUR_JAVA" ] && continue
+	cd "$JVM_BIN" || continue
+	printf 'Remove %s ...\n' "$jdk"
+	for f in $(find -type f -printf '%f '); do
+		$ALT --remove $f "$JVM_BIN/$f" >/dev/null 2>/dev/null
+	done
+	cd "$JVMDIR"
+	rm -rf "$JVMDIR/$jdk"
+done
+
+# remove dangling alternatives
+cd "${CUR_JAVA%/*}" || exit
+for f in $(find -type f -printf '%f '); do
+	for invalid in $($ALT --display $f 2>&1 | grep warning: | grep -o '/.*/'); do
+		printf 'Remove invalid alternative %s\n' "$invalid$f"
+		$ALT --remove $f "$invalid$f" >/dev/null 2>/dev/null
+	done
+done
+
+printf 'DONE\n\n'
