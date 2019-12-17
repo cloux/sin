@@ -1,0 +1,16 @@
+#!/bin/sh
+# GitAhead uninstallation
+#
+# (cloux@rote.ch)
+
+printf 'Remove GitAhead ...\n'
+
+if [ $(id -u) -ne 0 ]; then printf '\nNeed to be root!\n'; exit 1; fi
+
+rm -rfv /opt/GitAhead /usr/local/bin/GitAhead \
+/usr/share/applications/gitahead.desktop \
+/root/.local/share/applications/gitahead.desktop \
+/root/.local/share/icons/hicolor/*/apps/gitahead.png \
+/usr/share/icons/hicolor/*/apps/gitahead.png
+
+printf 'DONE\n'
