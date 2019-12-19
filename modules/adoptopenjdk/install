@@ -61,7 +61,10 @@ printf '\nSearching for latest %s%s-%s for %s %s ... ' "$BIN_TYPE" "$VERSION" "$
 API_ASSETS='https://api.adoptopenjdk.net/v2/latestAssets'
 API_ASSETS=$API_ASSETS'/'$RELEASE_TYPE'/openjdk'$VERSION'?os='$OS'&arch='$ARCH'&type='$BIN_TYPE'&heap_size='$HEAP_SIZE'&openjdk_impl='$JVM
 ASSET_JSON="$(wget -qN4 -O - "$API_ASSETS")"
-[ $? -eq 0 ] || exit 1
+if [ $? -ne 0 ]; then
+	printf 'failed\n'
+	exit 1
+fi
 
 # parse single JSON element
 SEMVER=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].version_data.semver')
