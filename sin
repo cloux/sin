@@ -79,12 +79,12 @@ for MODULE in $MODULES; do
 
 	# run the command, kill it after a timeout if possible
 	if [ "$(command -v timeout)" ]; then
-		( timeout --foreground -k "$TIMEOUT_KILL" "$TIMEOUT" \
-		 "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE" ) |
-		 tee "$LOGFILE" 2>/dev/null
+		{ timeout --foreground -k "$TIMEOUT_KILL" "$TIMEOUT" \
+		  "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE"; } |
+		  tee "$LOGFILE" 2>/dev/null
 	else
-		( "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE" ) |
-		 tee "$LOGFILE" 2>/dev/null
+		{ "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE"; } |
+		  tee "$LOGFILE" 2>/dev/null
 	fi
 done
 exit $(cat "$E_FILE" 2>/dev/null && rm -f "$E_FILE")
