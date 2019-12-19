@@ -16,8 +16,8 @@ TIMEOUT_KILL="10s"
 
 list_modules () {
 	printf 'Available modules: '
-	find ~/.local/share/sin/ /usr/local/share/sin/ /usr/share/sin/ ${0%/*}/modules/ \
-	  -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -u | tr '\n' ' '
+	find ~/.local/share/sin/ /usr/local/share/sin/ /usr/share/sin/ "${0%/*}/modules/" \
+	 -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort -u | tr '\n' ' '
 	printf '\n\n'
 }
 
@@ -38,24 +38,28 @@ elif [ $# -eq 1 ]; then
 	MODULES=$1
 else
 	COMMAND=$1
-	MODULES=${@#* }
+	MODULES="$*"
+	MODULES=${MODULES#* }
 fi
 printf 'Command: %s\nModules: %s\n' "$COMMAND" "$MODULES"
 
 LOGDIR=/var/log/sin
 [ -d "$LOGDIR" ] || mkdir -p "$LOGDIR" 2>/dev/null
 
+# use temp file to remember the last error code
+E_FILE=$(mktemp -q)
 for MODULE in $MODULES; do
 	printf '====================================================\n'
 
 	# determine what script to run
-	MODDIR="~/.local/share/sin/$MODULE"
+	MODDIR="$HOME/.local/share/sin/$MODULE"
 	[ -d "$MODDIR" ] || MODDIR="/usr/local/share/sin/$MODULE"
 	[ -d "$MODDIR" ] || MODDIR="/usr/share/sin/$MODULE"
 	[ -d "$MODDIR" ] || MODDIR="${0%/*}/modules/$MODULE"
 	if [ ! -d "$MODDIR" ]; then
 		printf 'Module "%s" not found.\n\n' "$MODULE"
 		list_modules
+		printf '1' >"$E_FILE"
 		continue
 	fi
 	if [ ! -x "$MODDIR/$COMMAND" ]; then
@@ -63,6 +67,7 @@ for MODULE in $MODULES; do
 		printf 'Available commands for "%s": ' "$MODULE"
 		find "$MODDIR" -maxdepth 1 -type f -perm /111 -printf '%f\n' | sort | tr '\n' ' '
 		printf '\n\n'
+		printf '1' >"$E_FILE"
 		continue
 	fi
 	printf 'Running: %s\n' "$MODDIR/$COMMAND"
@@ -74,10 +79,12 @@ for MODULE in $MODULES; do
 
 	# run the command, kill it after a timeout if possible
 	if [ "$(command -v timeout)" ]; then
-		timeout --foreground -k "$TIMEOUT_KILL" "$TIMEOUT" \
-		"$MODDIR/$COMMAND" 2>&1 | tee "$LOGFILE" 2>/dev/null
+		( timeout --foreground -k "$TIMEOUT_KILL" "$TIMEOUT" \
+		 "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE" ) |
+		 tee "$LOGFILE" 2>/dev/null
 	else
-		"$MODDIR/$COMMAND" 2>&1 | tee "$LOGFILE" 2>/dev/null
+		( "$MODDIR/$COMMAND" 2>&1 || printf '%s' "$?" >"$E_FILE" ) |
+		 tee "$LOGFILE" 2>/dev/null
 	fi
 done
-
+exit $(cat "$E_FILE" 2>/dev/null && rm -f "$E_FILE")
