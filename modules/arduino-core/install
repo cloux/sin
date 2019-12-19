@@ -66,6 +66,7 @@ rm -rf examples dist java reference tools tools-builder
 rm -rf hardware/tools lib/theme lib/icons
 rm -f lib/*so lib/*jar lib/*ico lib/*png lib/*bmp
 rm -f arduino* *install.sh
+chown -R root: /tmp/"$ARDUINO_DIR"
 printf 'done\n'
 
 # move the clean core to destination $LIBS_PATH
