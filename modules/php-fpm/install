@@ -7,7 +7,7 @@
 #
 # dependencies:
 # gcc sed wget bison gawk re2c autoconf automake
-# libcurl4-gnutls-dev libicu-dev libbz2-dev libwebp-dev libpng-dev libjpeg-dev
+# libcurl4-gnutls-dev libicu-dev libonig-dev libbz2-dev libwebp-dev libpng-dev libjpeg-dev
 # libreadline-dev libfreetype6-dev libpq-dev libxpm-dev libsodium-dev libzip-dev
 #
 # (cloux@rote.ch)
@@ -74,16 +74,14 @@ printf '\nConfigure PHP-FPM v%s ...\n\n' "$PHP_VERSION" | tee "../php-$PHP_VERSI
 export CFLAGS="-O2 -march=native"
 export CXXFLAGS="-O2 -march=native"
 ./configure --disable-all --enable-fpm --without-fpm-systemd --disable-cgi --disable-cli --disable-phpdbg \
---enable-calendar --enable-ctype --enable-dom \
---enable-exif --enable-fileinfo --enable-filter --enable-hash --enable-intl \
---enable-json --enable-libxml --enable-mbstring --enable-mysqlnd \
---enable-opcache --enable-opcache-file --enable-pdo --enable-phar --enable-posix \
+--enable-calendar --enable-ctype --enable-dom --enable-exif --enable-fileinfo \
+--enable-filter --enable-gd --enable-intl --enable-json --enable-mbstring \
+--enable-mysqlnd --enable-opcache --enable-pdo --enable-phar --enable-posix \
 --enable-session --enable-shmop --enable-simplexml --enable-sockets \
---enable-sysvmsg --enable-sysvsem --enable-sysvshm \
---enable-tokenizer --enable-xmlreader --enable-zip \
---with-bz2 --with-curl --with-gd --with-gettext \
---with-mysqli --with-pdo-mysql --with-pgsql --with-readline --with-openssl --with-xsl --with-sodium \
---with-webp-dir --with-jpeg-dir --with-xpm-dir --with-freetype-dir --with-iconv-dir --with-zlib-dir=shared \
+--enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-tokenizer --enable-xmlreader \
+--with-bz2 --with-curl --with-freetype --with-gettext --with-jpeg --with-libxml \
+--with-mhash --with-mysqli --with-openssl --with-pdo-mysql --with-pgsql --with-readline \
+--with-sodium --with-webp --with-xpm --with-xsl --with-zip --with-zlib-dir=shared \
 --localstatedir=/var --datadir=/usr/local/share/doc --mandir=/usr/local/share/man \
 --sysconfdir=/etc --sbindir=/usr/local/sbin --libdir=/usr/lib/php \
 --with-config-file-path="/etc/php/$PHP_VERSION/fpm" \
