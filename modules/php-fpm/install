@@ -85,7 +85,7 @@ export CXXFLAGS="-O2 -march=native"
 --localstatedir=/var --datadir=/usr/local/share/doc --mandir=/usr/local/share/man \
 --sysconfdir=/etc --sbindir=/usr/local/sbin --libdir=/usr/lib/php \
 --with-config-file-path="/etc/php/$PHP_VERSION/fpm" \
---with-config-file-scan-dir="/etc/php/$PHP_VERSION/fpm/conf.d" | tee -a "../php-$PHP_VERSION.build.log"
+--with-config-file-scan-dir="/etc/php/$PHP_VERSION/conf.d" | tee -a "../php-$PHP_VERSION.build.log"
 if [ ! -s Makefile ]; then
 	printf '\nERROR: configuring PHP failed.\n'
 	exit
@@ -113,7 +113,7 @@ make install-fpm | tee -a "../php-$PHP_VERSION.build.log"
 make install-modules | tee -a "../php-$PHP_VERSION.build.log"
 EXT_DIR=$(grep '^EXTENSION_DIR' Makefile | grep -o '/.*')
 if [ -d "$EXT_DIR" ]; then
-	INI_DIR="/etc/php/$PHP_VERSION/extensions"
+	INI_DIR="/etc/php/$PHP_VERSION/conf.d"
 	[ -d "$INI_DIR" ] || mkdir -p "$INI_DIR"
 	for extension in "$EXT_DIR"/*.so; do
 		INI_FILE=$(printf '%s' "$extension" | grep -o '[^/]*$' | sed 's/so$/ini/')
