@@ -31,13 +31,12 @@ printf 'OS: %s %s\n\n' "$DISTRO" "$(uname -srmo)"
 #
 # manage package dependencies
 #
-APTINST="$(command -v aptitude)"
-[ "$APTINST" ] || APTINST="$(command -v apt-get)" 
+APTINST="$(command -v aptitude || command -v apt-get)"
 if [ "$APTINST" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; then
 	printf 'Manage dependencies ...\n\n'
 	export DEBIAN_FRONTEND=noninteractive
 	printf 'Update list of available packages ...\n'
-	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update
+	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update || exit 1
 	printf 'Install dependencies ...\n'
 	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install \
 	  build-essential libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
@@ -267,9 +266,28 @@ else
 	rm -f /etc/service/X11dm
 fi
 
-printf '\nINSTALLATION COMPLETE\n\n'
-printf ' To switch to runit-init system, tell the kernel to use runit:\n'
-printf '  1. edit /etc/default/grub and add\n'
-printf '     GRUB_CMDLINE_LINUX_DEFAULT="init=/sbin/runit-init"\n'
-printf '  2. run "update-grub" and reboot.\n\n'
-printf ' WARNING: BROKEN INIT SYSTEM MIGHT KILL JOHN WICKS DOG!\n\n'
+#
+# info about direct boot
+#
+if [ -f /etc/default/grub ] &&
+! grep -q '^ *GRUB_DEVICE.*PART' /etc/default/grub
+then
+	PARTUUID="$(findmnt -n -o PARTUUID -M / 2>/dev/null)"
+	DEVICE_OVERRIDE='GRUB_DEVICE="PARTUUID='$PARTUUID'"'
+	printf '\nIf you boot without initramfs, add this line to /etc/default/grub:\n'
+	printf '%s\n' "$DEVICE_OVERRIDE"
+fi
+
+#
+# final info
+#
+printf '\n To switch to runit-init, tell the kernel to use runit:\n'
+printf '   ln -f /sbin/runit-init /sbin/init\n'
+if [ -f /etc/default/grub ]; then
+	printf ' Or:\n'
+	printf '  1. edit /etc/default/grub and add\n'
+	printf '     GRUB_CMDLINE_LINUX_DEFAULT="init=/sbin/runit-init"\n'
+	printf '  2. run "update-grub" and reboot.\n'
+fi
+printf '\n WARNING: BROKEN INIT SYSTEM MIGHT KILL JOHN WICK'\''S DOG!\n\n'
+printf ' INSTALLATION COMPLETE\n'
