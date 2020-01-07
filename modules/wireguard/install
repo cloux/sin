@@ -1,6 +1,8 @@
 #!/bin/sh
 #
 # Install WireGuard - Secure VPN Tunnel
+# Kernel module for Linux 3.10 - 5.5
+#
 # https://www.wireguard.com
 #
 # (cloux@rote.ch)
@@ -9,10 +11,10 @@
 if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
 # get the source
-cd /usr/src
-if [ -d WireGuard ]; then
+cd /usr/src || exit 1
+if [ -d wireguard ]; then
 	# NOTE: do not pull, this repository introduces conflicts on a regular basis
-	rm -rf WireGuard
+	rm -rf wireguard
 else
 	# install dependencies
 	export DEBIAN_FRONTEND=noninteractive
@@ -20,12 +22,21 @@ else
 	  build-essential pkg-config || exit 1
 fi
 # clone repo
-git clone --depth 1 https://git.zx2c4.com/WireGuard || exit 1
-cd WireGuard/src
+git clone --depth 1 https://git.zx2c4.com/wireguard-linux-compat wireguard || exit 1
+cd wireguard/src || exit 1
 
 # compile & install
 export LC_ALL=C
 export LANG=C
+make -j $(nproc) || exit 1
+make install || exit 1
+make clean >/dev/null
+
+# install wireguard-tools
+cd /usr/src
+[ -d wireguard-tools ] && rm -rf wireguard-tools
+git clone --depth 1 https://git.zx2c4.com/wireguard-tools || exit 1
+cd wireguard-tools/src || exit 1
 make -j $(nproc) || exit 1
 make install || exit 1
 make clean >/dev/null
