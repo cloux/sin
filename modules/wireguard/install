@@ -31,6 +31,8 @@ export LANG=C
 make -j $(nproc) || exit 1
 make install || exit 1
 make clean >/dev/null
+# load module
+modprobe wireguard
 
 # install wireguard-tools
 cd /usr/src
