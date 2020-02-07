@@ -186,8 +186,8 @@ fi
 #
 printf '\nDetect and activate current services ...\n\n'
 for PROCNAME in acpid cron dovecot dnsmasq elogind hiawatha lircd nginx nscd \
-  oomd opendkim php-fpm postfix proftpd redis-server redis-sentinel rpcbind \
-  rpc.mountd smbd uuidd wicd; do
+  oomd opendkim php-fpm postfix proftpd pure-ftpd redis-server redis-sentinel \
+  rpcbind rpc.mountd smbd uuidd wicd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf 'Found %s: %s\n' "$PROCNAME" "$SRV"
@@ -234,10 +234,10 @@ if [ "$SRV" ]; then
 	printf 'Found postgresql: %s\n' "$SRV"
 	ln -sf /etc/sv/postgresql /etc/service/
 fi
-SRV="$(pgrep -a pure-ftpd)"
+SRV="$(pgrep -ax smartd)"
 if [ "$SRV" ]; then
-	printf 'Found pureftpd: %s\n' "$SRV"
-	ln -sf /etc/sv/pureftpd /etc/service/
+	printf 'Found smartmontools: %s\n' "$SRV"
+	ln -sf /etc/sv/smartmontools /etc/service/
 fi
 SRV="$(pgrep -ax udevd | head -n 1)"
 if [ "$SRV" ]; then
