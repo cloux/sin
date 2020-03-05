@@ -3,21 +3,23 @@
 # AdoptOpenJDK installer
 #
 # Docs: https://adoptopenjdk.net
-#  API: https://api.adoptopenjdk.net/
+#  API: https://api.adoptopenjdk.net/swagger-ui
 #
 # (cloux@rote.ch)
 ##################################################################
 exec 2>&1
 
 # Java Package Parameters
+# aix | linux | mac | solaris
 OS=linux
+# aarch64 | arm | ppc64 | ppc64le | s390x | sparcv9 | x32 | x64
 ARCH=x64
 # releases | nightly
 RELEASE_TYPE=releases
 # jre | jdk
 BIN_TYPE=jdk
-# Java 8, 9, 10, 11, 12 ...
-VERSION=12
+# 8, 9, 10, 11, 12 ... | feature | lts
+VERSION=lts
 # JVM variant: openj9 | hotspot
 JVM=openj9
 # Heap: normal | large
@@ -56,27 +58,39 @@ for DEP in wget jq; do
 	fi
 done
 
-printf '\nSearching for latest %s%s-%s for %s %s ... ' "$BIN_TYPE" "$VERSION" "$JVM" "$OS" "$ARCH"
+printf '\nSearching for latest %s %s %s for %s %s ... ' \
+"$BIN_TYPE" "$VERSION" "$JVM" "$OS" "$ARCH"
 
-API_ASSETS='https://api.adoptopenjdk.net/v2/latestAssets'
-API_ASSETS=$API_ASSETS'/'$RELEASE_TYPE'/openjdk'$VERSION'?os='$OS'&arch='$ARCH'&type='$BIN_TYPE'&heap_size='$HEAP_SIZE'&openjdk_impl='$JVM
-ASSET_JSON="$(wget -qN4 -O - "$API_ASSETS")"
+API_BASE='https://api.adoptopenjdk.net/v3'
+
+# get release version number
+if [ "$VERSION" = "feature" ]; then
+	VERSION=$(wget -q4 --tries=1 -O - "$API_BASE/info/available_releases" |
+	  jq -r '.most_recent_feature_release')
+elif [ "$VERSION" = "lts" ]; then
+	VERSION=$(wget -q4 --tries=1 -O - "$API_BASE/info/available_releases" |
+	  jq -r '.most_recent_lts')
+fi
+printf '%s' "$VERSION" | grep -qE '^[0-9]+$' || exit 1
+
+# get releases JSON
+API_ASSETS=$API_BASE'/assets/feature_releases/'$VERSION'/ga?architecture='\
+$ARCH'&heap_size='$HEAP_SIZE'&image_type='$BIN_TYPE'&jvm_impl='$JVM'&os='$OS
+RELEASES_JSON="$(wget -q4 --tries=1 -O - "$API_ASSETS")"
 if [ $? -ne 0 ]; then
 	printf 'failed\n'
 	exit 1
 fi
 
-# parse single JSON element
-SEMVER=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].version_data.semver')
+# parse first JSON element
+SEMVER=$(printf '%s' "$RELEASES_JSON" | jq -r '.[0].version_data.semver')
 if [ -z "$SEMVER" ]; then
-	printf 'error, invalid reply:\n%s\n' "$ASSET_JSON"
+	printf 'error, invalid reply:\n%s\n' "$RELEASES_JSON"
 	exit 1
 fi
-BIN_SIZE=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].binary_size')
+BIN_SIZE=$(printf '%s' "$RELEASES_JSON" | jq -r '.[0].binaries[0].package.size')
 printf 'found: v%s (%s MB)\n\n' "$SEMVER" "$((BIN_SIZE/1024/1024))"
-
-# parse download link
-BIN_LINK=$(printf '%s' "$ASSET_JSON" | jq -r '.[0].binary_link')
+BIN_LINK=$(printf '%s' "$RELEASES_JSON" | jq -r '.[0].binaries[0].package.link')
 if [ -z "$BIN_LINK" ]; then
 	printf 'Error: invalid link in reply.\n'
 	exit 1
@@ -92,8 +106,7 @@ if [ -f "$BIN_FILE" ] && [ "$BIN_SIZE" -ge "$(stat -c '%s' "$BIN_FILE")" ]; then
 fi
 if [ ! -f "$BIN_FILE" ]; then
 	printf 'Downloading into %s ...\n\n' "$ARCHIVE_DIR"
-	wget -U 'Mozilla/5.0 (X11; Linux i686; rv:64.0) Gecko/20100101 Firefox/64.0' \
-	--referer="$API_ASSETS" -4 --progress=dot:giga "$BIN_LINK" || exit 1
+	wget -4 --tries=1 --progress=dot:giga "$BIN_LINK" || exit 1
 fi
 [ -s "$BIN_FILE" ] || exit 1
 
@@ -110,7 +123,7 @@ ADOPT_DIR=$(find -maxdepth 1 -type d -iname '*'$BIN_TYPE'*' -printf '%f' -quit)
 
 # delete old distributions from cache
 find "$ARCHIVE_DIR" -maxdepth 1 -type f ! -iname "$BIN_FILE" \
-  -iname '*'${BIN_TYPE}_${ARCH}_${OS}_${JVM}_${VERSION}'*' -delete
+  -iname '*'${BIN_TYPE}_${ARCH}_${OS}_${JVM}_'*' -delete
 
 # install
 if [ -d "$TARGET_PATH/$ADOPT_DIR" ]; then
