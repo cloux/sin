@@ -31,18 +31,17 @@ printf 'OS: %s %s\n\n' "$DISTRO" "$(uname -srmo)"
 #
 # manage package dependencies
 #
-APTINST="$(command -v aptitude || command -v apt-get)"
-if [ "$APTINST" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; then
+if [ "$(command -v apt-get)" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep ^ii)" ]; then
 	printf 'Manage dependencies ...\n\n'
 	export DEBIAN_FRONTEND=noninteractive
 	printf 'Update list of available packages ...\n'
-	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 update || exit 1
+	apt-get -q -o Dpkg::Use-Pty=0 update || exit 1
 	printf 'Install dependencies ...\n'
-	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 install \
-	  build-essential libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind
+	apt-get -qy --fix-broken --no-install-recommends -o Dpkg::Use-Pty=0 install \
+	  build-essential libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind procps
 	printf 'Remove conflicting packages ...\n'
-	$APTINST -f --assume-yes -o Dpkg::Use-Pty=0 remove \
-	  runit runit-init getty-run
+	apt-get -qy --purge --allow-remove-essential -o Dpkg::Use-Pty=0 remove \
+	  runit runit-init getty-run 2>/dev/null
 	printf '\n'
 fi
 
@@ -61,7 +60,7 @@ if [ -d "${RUNIT_GIT##*/}" ]; then
 	fi
 else
 	# install dependencies
-	[ "$APTINST" ] && $APTINST --assume-yes -o Dpkg::Use-Pty=0 \
+	[ "$(command -v apt-get)" ] && apt-get -qy --no-install-recommends -o Dpkg::Use-Pty=0 \
 	  install git gcc make
 	# clone repo
 	git clone -q --depth 1 $RUNIT_GIT || exit 1

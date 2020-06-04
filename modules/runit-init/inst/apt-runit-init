@@ -1,3 +1,9 @@
+# these should be uninstalled
 Package: getty-run runit runit-init
+Pin: release *
+Pin-Priority: -1
+
+# should be kept installed but never updated
+Package: init-system-helpers
 Pin: release *
 Pin-Priority: -1
