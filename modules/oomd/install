@@ -26,7 +26,7 @@ fi
 # build
 rm -rf build
 meson build || exit 1
-ninja -C build || exit 1
+ninja -j 1 -C build || exit 1
 
 # install
 cd build
