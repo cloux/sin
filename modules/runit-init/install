@@ -38,7 +38,7 @@ if [ "$(command -v apt-get)" ] && [ -z "$(dpkg -l libelogind0 2>/dev/null | grep
 	apt-get -q -o Dpkg::Use-Pty=0 update || exit 1
 	printf 'Install dependencies ...\n'
 	apt-get -qy --fix-broken --no-install-recommends -o Dpkg::Use-Pty=0 install \
-	  build-essential libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind procps
+	  build-essential bc libc6-dev gcc bootlogd eudev elogind libelogind0 libpam-elogind procps
 	printf 'Remove conflicting packages ...\n'
 	apt-get -qy --purge --allow-remove-essential -o Dpkg::Use-Pty=0 remove \
 	  runit runit-init getty-run 2>/dev/null
