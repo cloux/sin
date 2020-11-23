@@ -1,10 +1,12 @@
 #!/bin/sh
-# Kuberentes Control Interface
+# Kuberentes Tools
+#
 # https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-linux
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
 #
 # (cloux@rote.ch)
 
-printf 'Install kubectl\n\n'
+printf 'Install kubernetes tools - kubectl, kubeadm, kubelet\n\n'
 
 if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 
@@ -29,7 +31,9 @@ fi
 # download
 cd /tmp || exit 1
 KUBECTL_LINK="https://storage.googleapis.com/kubernetes-release/release/$LATEST/bin/linux/amd64/kubectl"
-wget -4 -N -nd --progress=dot:giga "$KUBECTL_LINK"
+KUBEADM_LINK="https://storage.googleapis.com/kubernetes-release/release/$LATEST/bin/linux/amd64/kubeadm"
+KUBELET_LINK="https://storage.googleapis.com/kubernetes-release/release/$LATEST/bin/linux/amd64/kubelet"
+wget -4 -N -nd --progress=dot:giga "$KUBECTL_LINK" "$KUBEADM_LINK" "$KUBELET_LINK"
 if [ $? -ne 0 ] || [ ! -s kubectl ]; then
 	printf 'ERROR: download failed.\n'
 	exit
@@ -37,13 +41,16 @@ fi
 
 # install
 printf 'Installing to /usr/local/bin/ ...\n'
-chmod 755 kubectl
-mv -f -t /usr/local/bin/ kubectl || exit 1
+chmod 755 kubectl kubeadm kubelet 2>/dev/null
+mv -f -t /usr/local/bin/ kubectl kubeadm kubelet || exit 1
 
 # shell completions
-[ -d /usr/share/bash-completion/completions ] &&
+if [ -d /usr/share/bash-completion/completions ]; then
 	kubectl completion bash 2>/dev/null > /usr/share/bash-completion/completions/kubectl
-[ -d /usr/share/zsh/vendor-completions ] &&
+	kubeadm completion bash 2>/dev/null > /usr/share/bash-completion/completions/kubeadm
+fi
+if [ -d /usr/share/zsh/vendor-completions ]; then
 	kubectl completion zsh 2>/dev/null > /usr/share/zsh/vendor-completions/_kubectl
-
+	kubeadm completion zsh 2>/dev/null > /usr/share/zsh/vendor-completions/_kubeadm
+fi
 printf '\nDONE\n'
