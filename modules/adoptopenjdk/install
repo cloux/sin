@@ -21,7 +21,7 @@ BIN_TYPE=jdk
 # 8, 9, 10, 11, 12 ... | feature | lts
 VERSION=lts
 # JVM variant: openj9 | hotspot
-JVM=openj9
+JVM=hotspot
 # Heap: normal | large
 HEAP_SIZE=normal
 

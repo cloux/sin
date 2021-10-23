@@ -75,7 +75,7 @@ export CFLAGS="-O2 -march=native"
 export CXXFLAGS="-O2 -march=native"
 ./configure --disable-all --enable-fpm --without-fpm-systemd --disable-cgi --disable-cli --disable-phpdbg \
 --enable-calendar --enable-ctype --enable-dom --enable-exif --enable-fileinfo \
---enable-filter --enable-gd --enable-intl --enable-json --enable-mbstring \
+--enable-filter --enable-gd --enable-intl --enable-mbstring \
 --enable-mysqlnd --enable-opcache --enable-pdo --enable-phar --enable-posix \
 --enable-session --enable-shmop --enable-simplexml --enable-sockets \
 --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-tokenizer --enable-xmlreader \
