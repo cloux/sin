@@ -36,7 +36,7 @@ printf 'OK\n'
 
 # stop log-creating services before deleting logfiles
 printf 'Stop services:\n'
-sv stop $(find /etc/service/ -type l ! -iname 'ssh' ! -iname '*getty*' ! -iname 'acpid')
+sv stop $(find /etc/service/ -type l ! -iname 'ssh' ! -iname 'dropbear' ! -iname '*getty*' ! -iname 'acpid')
 
 printf 'Delete logfiles ...'
 DOWNTIMEDB=$(downtime -v 2>/dev/null | grep downtimedbfile | grep -o '/.*')
@@ -45,7 +45,7 @@ rm -f /var/log/alternatives.* /var/log/boot.log* /var/log/cloud-init*.log* \
  /var/log/dmesg.log* /var/log/apt/history.log* /var/log/apt/term.log* \
  /var/log/hiawatha/* /var/log/pure*.log /var/log/autorun*.log* \
  /var/log/dpkg.log* /var/log/lastlog /var/log/wtmp* /var/log/btmp* /var/backups/* \
- /var/log/amazon/ssm/*.log /var/log/aptitude 2>/dev/null
+ /var/log/amazon/ssm/*.log /var/log/aptitude /var/log/dropbear/* 2>/dev/null
 rm -rf /var/log/ntpstats /var/log/letsencrypt /var/log/runit /var/log/sin /tmp/*
 find /var/log -type f \( -iname current -o -iname '@*' -o -iname '*.gz' -o -iname '*.xz' \) -delete
 touch /var/log/lastlog
