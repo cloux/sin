@@ -74,9 +74,9 @@ package/install-man
 printf 'Installing commands ...\n'
 # use the same target paths as the DEB package
 cd command || exit 1
-cp -puvf -t /sbin/ runit runit-init
-cp -puvf -t /usr/sbin/ runsvchdir utmpset
-cp -puvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
+cp -pvf -t /sbin/ runit runit-init
+cp -pvf -t /usr/sbin/ runsvchdir utmpset
+cp -pvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
 [ -f /sbin/init ] || ln /sbin/runit-init /sbin/init
 cd ..
 # install bash completion
