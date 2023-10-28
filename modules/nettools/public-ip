@@ -20,7 +20,7 @@ if [ "$PUBLIC_IP" ] && [ -r /etc/default/public-domain ]; then
 	# show domain names that point to my public IP
 	for DOMAIN_NAME in $DOMAINS; do
 		#DOMAIN_IP=$(dig +short "$DOMAIN_NAME" 2>/dev/null)
-		DOMAIN_IP=$(host -4 "$DOMAIN_NAME" 8.8.8.8 2>/dev/null | grep "$DOMAIN_NAME" | grep -o '[0-9.]*$')
+		DOMAIN_IP=$(host -4 "$DOMAIN_NAME" 1.1.1.1 2>/dev/null | grep "^$DOMAIN_NAME has address" | grep -o '[0-9.]*$')
 		[ "$PUBLIC_IP" = "$DOMAIN_IP" ] && printf ' %s' "$DOMAIN_NAME"
 	done
 fi

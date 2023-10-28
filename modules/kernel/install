@@ -136,7 +136,7 @@ if [ "$CHECK" ]; then
 		export DISPLAY=$(who | grep $(id -un) | grep -o '[(].*[)]$' | grep -o '[^()]*')
 		notify-send --expire-time=30000 \
 		  --icon=/usr/share/icons/gnome/48x48/status/software-update-available.png \
-		"New $MONIKER kernel $KERNEL_VERSION found"
+		"New $MONIKER kernel $KERNEL_VERSION found" 2>/dev/null
 	fi
 	exit
 fi
