@@ -8,10 +8,10 @@
 #        moniker: stable, mainline, longterm, linux-next, etc.
 #             -c: just check if new version is available, don't update
 #
-# dependencies: wget bc bison flex lz4c libncurses5-dev
+# dependencies: wget bc bison flex lz4 libncurses5-dev
 #     optional: notify-send, for kernel check GUI notification support
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 ###########################################################
 
 # Linux kernel branch
@@ -74,14 +74,14 @@ APTINST="$(command -v aptitude)"
 export DEBIAN_FRONTEND=noninteractive
 if [ -z "$(command -v wget)" ] || [ -z "$(command -v bc)" ] || \
    [ -z "$(command -v bison)" ] || [ -z "$(command -v flex)" ] || \
-   [ -z "$(command -v lz4c)" ] || [ -z "$(command -v jq)" ]; then \
+   [ -z "$(command -v lz4)" ] || [ -z "$(command -v jq)" ]; then \
 	if [ "$APTINST" ]; then
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 update
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install \
-		  wget bc bison flex libssl-dev libelf-dev lz4 jq
+		  libc6-dev libelf-dev libssl-dev wget bc bison flex lz4 jq
 	fi
 fi
-for DEP in wget bc bison flex lz4c jq; do
+for DEP in wget bc bison flex lz4 jq; do
 	if ! command -v "$DEP" >/dev/null; then
 		printf 'ERROR: Please install "%s" to continue.\n' "$DEP"
 		exit 1
