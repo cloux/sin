@@ -3,7 +3,7 @@
 # Download latest Hiawatha webserver, compile and update.
 # For Hiawatha v8.0 and higher.
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #########################################################################
 
 # Set this variable, if you want to receive a status mail:
@@ -27,10 +27,10 @@ hiawatha_stop () {
 	fi
 	if [ "$(pgrep runsvdir)" ]; then
 		# runit supervisor
-		sv stop hiawatha
+		sv stop hiawatha >/dev/null
 	elif [ "$(pgrep s6-svscan)" ]; then
 		# s6 supervisor
-		s6-svc -wd hiawatha
+		s6-svc -wd hiawatha >/dev/null 2>/dev/null
 	else
 		/etc/init.d/hiawatha stop
 	fi
@@ -39,7 +39,7 @@ hiawatha_stop () {
 # start hiawatha on supervised init
 hiawatha_start () {
 	if [ "$(pgrep runsvdir)" ]; then
-		sv start hiawatha
+		sv s hiawatha >/dev/null && sv start hiawatha
 	elif [ "$(pgrep s6-svscan)" ]; then
 		s6-svc -u hiawatha
 	else
@@ -62,7 +62,7 @@ if [ -z "$(command -v hiawatha)" ]; then
 	if [ "$APTINST" ]; then
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install cmake make lsof libxml2 \
 		         libxml2-dev libxslt1.1 libxslt1-dev libc6-dev libssl-dev \
-		         zlib1g-dev dpkg-dev debhelper fakeroot apache2-utils procps wget
+		         zlib1g-dev dpkg-dev debhelper fakeroot apache2-utils procps wget certbot
 	else
 		printf 'WARNING: Apt packaging system not found, dependencies installation skipped.\n'
 	fi
@@ -76,7 +76,7 @@ fi
 [ -d "$MY_ROOT" ] || mkdir -p "$MY_ROOT"
 cd "$MY_ROOT" || exit 1
 
-LATEST=$(wget -q -O - https://www.hiawatha-webserver.org/latest 2>/dev/null)
+LATEST=$(wget -q -O - https://hiawatha.leisink.net/latest 2>/dev/null)
 if [ -z "$(printf '%s' "$LATEST" | head -n 1 | grep '^[0-9][0-9.]*$')" ]; then
 	printf 'WARNING: Hiawatha latest version checking failed.\n'
 	exit
@@ -87,7 +87,7 @@ if [ -s "$MY_ROOT/hiawatha-$LATEST.tar.gz" ]; then
 fi
 
 printf 'Downloading new Hiawatha v%s ...' "$LATEST"
-wget -q -O "$MY_ROOT/hiawatha-$LATEST.tar.gz" "https://www.hiawatha-webserver.org/files/hiawatha-$LATEST.tar.gz"
+wget -q -O "$MY_ROOT/hiawatha-$LATEST.tar.gz" "https://hiawatha.leisink.net/files/download/hiawatha-$LATEST.tar.gz"
 if [ -s "$MY_ROOT/hiawatha-$LATEST.tar.gz" ]; then
 	printf 'OK\n'
 else
