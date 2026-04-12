@@ -2,7 +2,7 @@
 #
 # Install runit as the default init system
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #
 
 # this defines if content of /etc/sv/ will be completely overwritten
@@ -56,7 +56,7 @@ if [ -d "${RUNIT_GIT##*/}" ]; then
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
 		printf 'Source is up to date.\n'
 	else
-		git pull -q
+		git pull -q || exit 1
 	fi
 else
 	# install dependencies
@@ -66,7 +66,7 @@ else
 	git clone -q --depth 1 $RUNIT_GIT || exit 1
 	cd ${RUNIT_GIT##*/}
 fi
-cd runit*
+cd runit* || exit 1
 # compile & check
 package/compile || exit 1
 #package/check || exit 1
@@ -74,9 +74,9 @@ package/install-man
 printf 'Installing commands ...\n'
 # use the same target paths as the DEB package
 cd command || exit 1
-cp -pvf -t /sbin/ runit runit-init
-cp -pvf -t /usr/sbin/ runsvchdir utmpset
-cp -pvf -t /usr/bin/ chpst runsv runsvdir sv svlogd
+cp -pvf -t /sbin/ ./runit ./runit-init
+cp -pvf -t /usr/sbin/ ./runsvchdir ./utmpset
+cp -pvf -t /usr/bin/ ./chpst ./runsv ./runsvdir ./sv ./svlogd
 [ -f /sbin/init ] || ln /sbin/runit-init /sbin/init
 cd ..
 # install bash completion
@@ -84,7 +84,7 @@ cd ..
 if [ -d /usr/share/bash-completion/completions ]; then
 	cd debian/contrib
 	for cfile in *.bash-completion; do
-		cp -pufv $cfile /usr/share/bash-completion/completions/${cfile%%.*}
+		cp -ufv "$cfile" /usr/share/bash-completion/completions/${cfile%%.*}
 	done
 	cd ../..
 fi
@@ -92,7 +92,7 @@ fi
 # NOTE: it will be activated only after runit-init becomes system init,
 #       see runit-base:etc/runit/autorun/runit-init
 [ -x debian/contrib/runlevel ] && \
-  cp -pufv debian/contrib/runlevel /sbin/runlevel.runit
+  cp -ufv debian/contrib/runlevel /sbin/runlevel.runit
 
 #
 # runit-base (git clone/pull)
@@ -105,7 +105,7 @@ if [ -d ${RUNIT_BASE_GIT##*/} ]; then
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
 		printf 'Source is up to date.\n'
 	else
-		git pull -q
+		git pull -q || exit 1
 	fi
 else
 	# clone repo
@@ -136,7 +136,7 @@ if [ -d ${RUNIT_UTILS_GIT##*/} ]; then
 	if [ "$(git rev-parse HEAD)" = "$(git rev-parse @{u})" ]; then
 		printf 'Source is up to date.\n'
 	else
-		git pull -q
+		git pull -q || exit 1
 	fi
 else
 	# clone repo
@@ -186,7 +186,7 @@ fi
 printf '\nDetect and activate current services ...\n\n'
 for PROCNAME in acpid cron dovecot dnsmasq elogind hiawatha lircd nginx nscd \
   oomd opendkim php-fpm postfix proftpd pure-ftpd redis-server redis-sentinel \
-  rpcbind rpc.mountd smbd uuidd wicd; do
+  rpcbind rpc.mountd smbd uuidd; do
 	SRV="$(pgrep -ax $PROCNAME)"
 	if [ "$SRV" ]; then
 		printf 'Found %s: %s\n' "$PROCNAME" "$SRV"
@@ -281,7 +281,7 @@ fi
 # final info
 #
 printf '\n To switch to runit-init, tell the kernel to use runit:\n'
-printf '   ln -f /sbin/runit-init /sbin/init\n'
+printf '   cp -f /sbin/runit-init /sbin/init\n'
 if [ -f /etc/default/grub ]; then
 	printf ' Or:\n'
 	printf '  1. edit /etc/default/grub and add\n'
