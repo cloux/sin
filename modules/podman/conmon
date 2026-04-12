@@ -1,7 +1,7 @@
 #!/bin/sh
 # Conmon - An OCI container runtime monitor
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 printf 'Install conmon\n\n'
 

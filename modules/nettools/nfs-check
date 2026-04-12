@@ -2,7 +2,7 @@
 #
 # check all NFS mounts for stale condition,
 # exit code is the number of stale NFS mounts
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 # how long to wait for NFS to respond before considered stale
 NFS_TIMEOUT=10

@@ -7,7 +7,7 @@
 # The main idea is to execute multiple installer/update scripts
 # for different products in series.
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #
 
 # maximum allowed runtime of a single command

@@ -4,7 +4,7 @@
 # https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-linux
 # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 printf 'Install kubernetes tools - kubectl, kubeadm, kubelet\n\n'
 

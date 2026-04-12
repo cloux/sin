@@ -11,7 +11,7 @@
 # To create letsencrypt certificate for multiple domains, run e.g.:
 # certbot certonly --webroot -w /var/www -d example.com -d www.example.com
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #########################################################################
 
 # Domain that is expected to be resolved to WEBROOT over HTTP.

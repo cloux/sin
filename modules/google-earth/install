@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install Google Earth (amd64)
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 if [ $(id -u) -ne 0 ]; then printf 'Need to be root!\n'; exit 1; fi
 if [ -z "$(command -v dpkg)" ]; then

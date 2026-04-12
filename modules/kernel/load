@@ -2,7 +2,7 @@
 #
 # load the latest kernel using kexec
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #
 
 # need to be root

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Podman - Docker replacement from RedHat
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 printf 'Install podman\n\n'
 

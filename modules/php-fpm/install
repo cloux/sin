@@ -10,7 +10,7 @@
 # libcurl4-gnutls-dev libicu-dev libonig-dev libbz2-dev libwebp-dev libpng-dev libjpeg-dev
 # libreadline-dev libfreetype6-dev libpq-dev libxpm-dev libsodium-dev libzip-dev
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 ###########################################################
 
 printf 'PHP-FPM - Download, compile and install the latest stable release\n\n'

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Podman uninstallation
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 printf 'Remove podman ...\n'
 

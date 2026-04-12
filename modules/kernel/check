@@ -2,7 +2,7 @@
 #
 # Check the latest kernel version on kernel.org
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 MODULE_PATH=$(realpath "${0%/*}" 2>/dev/null)
 

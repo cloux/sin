@@ -4,10 +4,11 @@
 # the Arduino Makefile (https://github.com/sudar/Arduino-Makefile).
 # Set ARDUINO_DIR in your Makefile to the path where arduino-core is installed.
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 ###################################################################################
 
 # Arduino core version number to be downloaded
+#VERSION=1.8.19
 VERSION=nightly
 
 # the libraries will go into $LIBS_PATH/arduino-core/$VERSION

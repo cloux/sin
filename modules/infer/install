@@ -3,7 +3,7 @@
 # Install FB Infer - tool to detect bugs in Java, C, C++ and ObjectiveC
 # https://fbinfer.com
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 #
 
 printf 'Install infer\n\n'

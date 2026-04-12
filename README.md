@@ -98,10 +98,10 @@ For a list of available modules and scripts see [modules](modules).
 
 ### Examples
 
- * `sin gitahead`  
-   A single parameter is assumed to be a module name with _install_ command => install/update [GitAhead](https://gitahead.github.io/gitahead.com/)
+ * `sin helm`  
+   A single parameter is assumed to be a module name with _install_ command => install/update [helm](https://helm.sh/)
  * `sin install kernel wireguard`  
-   Install/update Linux kernel and [wireguard](https://www.wireguard.com) tunnel
+   Install/update Linux [kernel](https://kernel.org) and [wireguard](https://www.wireguard.com) tunnel
  * `sin check kernel`  
    Check if a new Linux kernel is available on kernel.org
 
@@ -115,7 +115,7 @@ This work is free. You can redistribute it and/or modify it under the terms of t
 ---
 ## Author
 
-This repository is maintained by _cloux@rote.ch_
+This repository is maintained by _jan@wespe.dev_
 
 ### Disclaimer
 

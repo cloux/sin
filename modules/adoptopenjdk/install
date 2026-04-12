@@ -5,7 +5,7 @@
 # Docs: https://adoptopenjdk.net
 #  API: https://api.adoptopenjdk.net/swagger-ui
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 ##################################################################
 exec 2>&1
 

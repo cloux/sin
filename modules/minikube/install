@@ -1,7 +1,7 @@
 #!/bin/sh
 # Minikube - tool to run kuberentes locally
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 printf 'Install minikube\n\n'
 

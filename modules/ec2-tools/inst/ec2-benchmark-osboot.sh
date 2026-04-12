@@ -5,7 +5,7 @@
 # and SSH availability.
 # For higher precision, several cycles should be run and averaged.
 #
-# (cloux@rote.ch)
+# (jan@wespe.dev)
 
 # your aws-cli profile
 profile="default"
