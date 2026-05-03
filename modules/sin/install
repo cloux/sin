@@ -33,7 +33,7 @@ else
 		$APTINST --assume-yes -o Dpkg::Use-Pty=0 install git || exit 1
 	fi
 	# clone repo
-	git clone https://github.com/cloux/sin || exit 1
+	git clone https://codeberg.org/wespe/sin || exit 1
 	cd sin
 fi
 

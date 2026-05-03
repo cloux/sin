@@ -1,5 +1,9 @@
 # Simple Installer
 
+## Repository Migration
+
+**This repository was migrated to [Codeberg](https://codeberg.org/wespe/sin)** and is now actively maintained there. The Repository at github is archived and will receive no further updates.
+
 ## About
 
 **S**imple **IN**staller provides a common interface for running multiple scripts in series, aimed to automate the installation and updates of applications outside of the main software repositories. Easily customizable and extendable using modular file structure. Poses no restrictions on the programming language, installation methods or required privileges for used commands. It is aimed at GNU/Linux, but it should run on any OS with a shell like FreeBSD or MacOS.
@@ -41,6 +45,7 @@ Some SIN command scripts might use system directories to track installations and
 If run as root, command output is logged into _/var/log/sin/COMMAND.log_. Existing logfiles are overwritten, no log rotation is necessary. If run as local user, terminal output is not logged to a file. If required, you might run `sin MODULE | tee LOGFILE` to save the output to a _LOGFILE_.
 
 ---
+
 ## Installation
 
 To install SIN with the base modules, run:
@@ -65,6 +70,7 @@ sin remove sin
 ```
 
 ---
+
 ## Usage
 
 ### Syntax
@@ -105,14 +111,15 @@ For a list of available modules and scripts see [modules](modules).
  * `sin check kernel`  
    Check if a new Linux kernel is available on kernel.org
 
-
 ---
+
 <a href="http://www.wtfpl.net"><img src="http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-2.png" align="right"></a>
 ## License
 
 This work is free. You can redistribute it and/or modify it under the terms of the Do What The Fuck You Want To Public License, Version 2, as published by Sam Hocevar. See http://www.wtfpl.net for more details. If you feel that releasing this work under WTFPL is not appropriate, just do WTF you want to. If you feel that using some of this code might be violating some other license, don't use the code (see [Disclaimer](#disclaimer)).
 
 ---
+
 ## Author
 
 This repository is maintained by _jan@wespe.dev_
